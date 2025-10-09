@@ -1,0 +1,8 @@
+version: '3'
+tasks:
+  update:
+    cmds:
+    - home-manager switch --flake .#bbrockway
+  clean:
+    cmds:
+    - nix-collect-garbage -d
