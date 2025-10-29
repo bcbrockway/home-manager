@@ -1,6 +1,9 @@
-{ lib, pkgs, ... }: let
+{ lib, pkgs, pkgs-unstable, ... }: let
   username = "bbrockway";
 in {
+  
+  targets.genericLinux.enable = true;
+  
   home = {
     inherit username;
     homeDirectory = "/home/${username}";
@@ -8,25 +11,57 @@ in {
   };
 
   home.packages = with pkgs; [
+    aws-nuke
+    awscli2
     claude-code
+    d2
+    direnv
     github-cli
+    go
     go-task
-    joplin-desktop
+    grim
+    pkgs-unstable.joplin-desktop
+    k9s
+    kubectl
+    kubectx
+    kubernetes-helm
+    pre-commit
+    slurp
+    stern
+    swappy
+    swaylock-effects
+    terraform
+    uv
+    vscode
+    warp-terminal
   ];
 
   xdg = {
     enable = true;
-  #   desktopEntries = {
-  #     joplin = {
-  #       name = "Joplin";
-  #       comment = "Joplin for Desktop";
-  #       exec = "joplin-desktop %U";
-  #       icon = "joplin";
-  #       terminal = false;
-  #       categories = [ "Office" ];
-  #       mimeType = [ "x-scheme-handler/joplin" ];
-  #     };
-  #   };
+    autostart.enable = true;
+    mime.enable = true;
+    desktopEntries = {
+      code = {
+        name = "Visual Studio Code";
+        categories = ["Utility" "TextEditor" "Development" "IDE"];
+        comment = "Code Editing. Redefined.";
+        exec = "code --no-sandbox %F";
+        genericName = "Text Editor";
+        icon = "vscode";
+        startupNotify = true;
+        type = "Application";
+        actions."new-empty-window" = {
+          exec = "code --no-sandbox --new-window %F";
+          icon = "vscode";
+          name = "New Empty Window";
+        };
+	settings = {
+          Keywords = "vscode";
+          StartupWMClass = "Code";
+          Version = "1.4";
+        };
+      };
+    };
   };
 
   programs.git = {
@@ -59,6 +94,78 @@ in {
     autosuggestion.enable = true;
     syntaxHighlighting.enable = true;
     initContent = ''
+      # FUNCTIONS
+      aws_env() {
+        AWS_PROFILE="$1" zsh
+      }
+
+      adecode() {
+        aws sts decode-authorization-message --encoded-message="$1" --query="DecodedMessage" --output="text" | jq .
+      }
+
+      tgau() {
+        rm -rf .terragrunt-cache && terragrunt init -upgrade && terragrunt apply --terragrunt-no-auto-init
+      }
+
+      tgclean() {
+        if [[ -z $1 ]]; then
+          echo "ERROR: Must provide path"
+          exit 1
+        else
+          find $1 -type d -regex ".*\.terra\(form\|grunt-cache\)" -exec rm -rf {} \;
+        fi
+      }
+
+      selfheal() {
+        local STATUS; STATUS=$1; shift
+        local APP_NAMES; APP_NAMES=( "$@" )
+        local onJSON; onJSON='{"spec": {"syncPolicy": {"automated":{"allowEmpty": false, "prune": true, "selfHeal": true}}}}'
+        local offJSON; offJSON='{"spec": {"syncPolicy": null}}'
+ 
+        if [[ $STATUS == off ]]; then
+            kubectl patch -n argocd app argocd-bootstrap --patch "''${offJSON}" --type merge
+            for APP_NAME in "''${APP_NAMES[@]}"; do
+              kubectl patch -n argocd app "$APP_NAME" --patch "''${offJSON}" --type merge
+            done
+        elif [[ $STATUS == on ]]; then
+          if [[ ''${#APP_NAMES[@]} -eq 0 ]]; then
+            kubectl patch -n argocd app argocd-bootstrap --patch "''${onJSON}" --type merge
+          else
+            for APP_NAME in "''${APP_NAMES[@]}"; do
+              kubectl patch -n argocd app "$APP_NAME" --patch "''${onJSON}" --type merge
+            done
+          fi
+        else
+          echo "first argument should be \"off\" or \"on\""
+          exit
+        fi
+      }
+      
+      setf() {
+        local STATUS; STATUS=$1; shift
+        local APP_NAMES; APP_NAMES=( "$@" )
+        local onJSON; onJSON='{"spec": {"syncPolicy": {"automated":{"allowEmpty": false, "prune": true, "selfHeal": true}}}}'
+        local offJSON; offJSON='{"spec": {"syncPolicy": null}}'
+ 
+        if [[ $STATUS == off ]]; then
+            kubectl patch -n argocd app argocd-bootstrap --patch "''${offJSON}" --type merge
+            for APP_NAME in "''${APP_NAMES[@]}"; do
+              kubectl patch -n argocd app "$APP_NAME" --patch "''${offJSON}" --type merge
+            done
+        elif [[ $STATUS == on ]]; then
+          if [[ ''${#APP_NAMES[@]} -eq 0 ]]; then
+            kubectl patch -n argocd app argocd-bootstrap --patch "''${onJSON}" --type merge
+          else
+            for APP_NAME in "''${APP_NAMES[@]}"; do
+              kubectl patch -n argocd app "$APP_NAME" --patch "''${onJSON}" --type merge
+            done
+          fi
+        else
+          echo "first argument should be \"off\" or \"on\""
+          exit
+        fi
+      }
+
       # PROMPT MANIPULATION
       PROMPT='%{$fg_bold[green]%}''${AWS_VAULT}%{''$reset_color%}''${ret_status} %{''$fg[cyan]%}%~%{''$reset_color%} ''$(git_prompt_info) ''$(kube_ps1)
       ''$ '
@@ -80,73 +187,15 @@ in {
 
       # VAGRANT
       export VAGRANT_DEFAULT_PROVIDER=libvirt
+
+      # GO
+      export GOBIN="''${HOME}/go/bin"
+      export PATH="$PATH:$GOBIN"
+
+      # SCRIPTS
+      export PATH="$PATH:''${HOME}/scripts"
     '';
-    siteFunctions = {
-      ae = ''
-        AWS_PROFILE="$1" zsh
-      '';
-      adecode = ''
-        aws sts decode-authorization-message --encoded-message="$1" --query="DecodedMessage" --output="text" | jq .
-      '';
-      tgau = "rm -rf .terragrunt-cache && terragrunt init -upgrade && terragrunt apply --terragrunt-no-auto-init";
-      tgclean = ''
-        if [[ -z $1 ]]; then
-          echo "ERROR: Must provide path"
-          exit 1
-        else
-          find $1 -type d -regex ".*\.terra\(form\|grunt-cache\)" -exec rm -rf {} \;
-        fi
-      '';
-      selfheal = ''
-        local STATUS; STATUS=$1; shift
-        local APP_NAMES; APP_NAMES=( "$@" )
-        local onJSON; onJSON='{"spec": {"syncPolicy": {"automated":{"allowEmpty": false, "prune": true, "selfHeal": true}}}}'
-        local offJSON; offJSON='{"spec": {"syncPolicy": null}}'
-
-        if [[ $STATUS == off ]]; then
-            kubectl patch -n argocd app argocd-bootstrap --patch "''${offJSON}" --type merge
-            for APP_NAME in "''${APP_NAMES[@]}"; do
-              kubectl patch -n argocd app "$APP_NAME" --patch "''${offJSON}" --type merge
-            done
-        elif [[ $STATUS == on ]]; then
-          if [[ ''${#APP_NAMES[@]} -eq 0 ]]; then
-            kubectl patch -n argocd app argocd-bootstrap --patch "''${onJSON}" --type merge
-          else
-            for APP_NAME in "''${APP_NAMES[@]}"; do
-              kubectl patch -n argocd app "$APP_NAME" --patch "''${onJSON}" --type merge
-            done
-          fi
-        else
-          echo "first argument should be \"off\" or \"on\""
-          exit
-        fi
-      '';
-      setf = ''
-        local STATUS; STATUS=$1; shift
-        local APP_NAMES; APP_NAMES=( "$@" )
-        local onJSON; onJSON='{"spec": {"syncPolicy": {"automated":{"allowEmpty": false, "prune": true, "selfHeal": true}}}}'
-        local offJSON; offJSON='{"spec": {"syncPolicy": null}}'
-
-        if [[ $STATUS == off ]]; then
-            kubectl patch -n argocd app argocd-bootstrap --patch "''${offJSON}" --type merge
-            for APP_NAME in "''${APP_NAMES[@]}"; do
-              kubectl patch -n argocd app "$APP_NAME" --patch "''${offJSON}" --type merge
-            done
-        elif [[ $STATUS == on ]]; then
-          if [[ ''${#APP_NAMES[@]} -eq 0 ]]; then
-            kubectl patch -n argocd app argocd-bootstrap --patch "''${onJSON}" --type merge
-          else
-            for APP_NAME in "''${APP_NAMES[@]}"; do
-              kubectl patch -n argocd app "$APP_NAME" --patch "''${onJSON}" --type merge
-            done
-          fi
-        else
-          echo "first argument should be \"off\" or \"on\""
-          exit
-        fi
-      '';
-    };
-    shellAliases = {
+     shellAliases = {
       # apt
       apti = "sudo apt install ";
       aptl = "sudo apt list ";
@@ -154,8 +203,12 @@ in {
       aptr = "sudo apt remove ";
       aptud = "sudo apt update ";
       aptug = "sudo apt upgrade ";
+
+      # aws
+      ae = "aws_env ";
       
       # general
+      dirs = "dirs -v";
       ll = "ls -l";
       setclip = "xclip -selection c";
       getclip = "xclip -selection c -o";

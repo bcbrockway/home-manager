@@ -1,14 +1,15 @@
 {
   description = "My Home Manager config";
   inputs = {
-    nixpkgs.url = "nixpkgs/nixpkgs-unstable";
+    nixpkgs.url = "nixpkgs/release-25.05";
+    nixpkgs-unstable.url = "nixpkgs/nixpkgs-unstable";
     home-manager = {
-      url = "github:nix-community/home-manager/master";
+      url = "github:nix-community/home-manager/release-25.05";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
 
-  outputs = { nixpkgs, home-manager, ... }:
+  outputs = { nixpkgs, nixpkgs-unstable, home-manager, ... }:
     let
       lib = nixpkgs.lib;
       system = "x86_64-linux";
@@ -16,6 +17,18 @@
         inherit system;
         config.allowUnfreePredicate = pkg: builtins.elem (lib.getName pkg) [
           "claude-code"
+          "terraform"
+          "vscode"
+          "warp-terminal"
+        ];
+      };
+      pkgs-unstable = import nixpkgs-unstable {
+        inherit system;
+        config.allowUnfreePredicate = pkg: builtins.elem (lib.getName pkg) [
+          "claude-code"
+          "terraform"
+          "vscode"
+          "warp-terminal"
         ];
       };
     in {
@@ -23,6 +36,9 @@
         bbrockway = home-manager.lib.homeManagerConfiguration {
           inherit pkgs;
           modules = [ ./home.nix ];
+          extraSpecialArgs = {
+            inherit pkgs-unstable;
+          };
         };
       };
     };
