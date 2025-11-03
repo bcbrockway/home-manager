@@ -194,6 +194,11 @@ in {
 
       # SCRIPTS
       export PATH="$PATH:''${HOME}/scripts"
+
+      # SSH KEYS
+      if ! ssh-add -l | grep /home/bbrockway/.ssh/id_rsa > /dev/null; then
+        ssh-add /home/bbrockway/.ssh/id_rsa
+      fi
     '';
      shellAliases = {
       # apt
