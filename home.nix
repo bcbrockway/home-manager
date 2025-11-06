@@ -16,10 +16,13 @@ in {
     claude-code
     d2
     direnv
+    gita
     github-cli
+    glab
     go
     go-task
     grim
+    hadolint
     pkgs-unstable.joplin-desktop
     k9s
     kubectl
