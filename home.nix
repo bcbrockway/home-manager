@@ -252,6 +252,7 @@ in {
     };
     oh-my-zsh = {
       enable = true;
+      custom = "/home/${username}/.oh-my-zsh/custom";
       plugins = [
         "aws"
         "direnv"
