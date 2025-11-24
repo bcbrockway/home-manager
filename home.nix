@@ -35,6 +35,19 @@ in {
     swaylock-effects
     terraform
     uv
+    # On Ubuntu 24.04, you must create/edit the relevant profile in /etc/apparmor.d for vscode to work properly without
+    # the --no-sandbox flag:
+    #
+    # # This profile allows everything and only exists to give the
+    # # application a name instead of having the label "unconfined"
+    #
+    # abi <abi/4.0>, include <tunables/global>
+    #
+    # profile vscode /nix/store/*-vscode-*/bin/code flags=(unconfined) { userns,
+    #
+    #   # Site-specific additions and overrides. See local/README for details.
+    #   include if exists <local/code>
+    # }
     vscode
     warp-terminal
   ];
@@ -43,28 +56,6 @@ in {
     enable = true;
     autostart.enable = true;
     mime.enable = true;
-    desktopEntries = {
-      code = {
-        name = "Visual Studio Code";
-        categories = ["Utility" "TextEditor" "Development" "IDE"];
-        comment = "Code Editing. Redefined.";
-        exec = "code --no-sandbox %F";
-        genericName = "Text Editor";
-        icon = "vscode";
-        startupNotify = true;
-        type = "Application";
-        actions."new-empty-window" = {
-          exec = "code --no-sandbox --new-window %F";
-          icon = "vscode";
-          name = "New Empty Window";
-        };
-	settings = {
-          Keywords = "vscode";
-          StartupWMClass = "Code";
-          Version = "1.4";
-        };
-      };
-    };
   };
 
   programs.git = {
@@ -179,6 +170,7 @@ in {
         aws sso login --profile "''$AWS_PROFILE"
         #eval ''$(aws configure export-credentials --profile dev --format env)
         export AWS_ROLE_ARN=''$(aws sts get-caller-identity | jq -r .Arn)
+	export AWS_PAGER=""
       fi
       
       # ASDF
@@ -197,6 +189,9 @@ in {
 
       # SCRIPTS
       export PATH="$PATH:''${HOME}/scripts"
+
+      # EKS-POWER
+      export PATH="$PATH:/data/gitlab.com/mintel/satoshi/tools/eks-power"
 
       # SSH KEYS
       if ! ssh-add -l | grep /home/bbrockway/.ssh/id_rsa > /dev/null; then
