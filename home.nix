@@ -170,7 +170,7 @@ in {
         aws sso login --profile "''$AWS_PROFILE"
         #eval ''$(aws configure export-credentials --profile dev --format env)
         export AWS_ROLE_ARN=''$(aws sts get-caller-identity | jq -r .Arn)
-	export AWS_PAGER=""
+        export AWS_PAGER=""
       fi
       
       # ASDF
