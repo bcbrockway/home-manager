@@ -50,6 +50,7 @@ in {
     # }
     vscode
     warp-terminal
+    wireshark-qt
   ];
 
   xdg = {
@@ -82,11 +83,25 @@ in {
     };
   };
 
+  programs.password-store = {
+    enable = true;
+    settings = {
+      PASSWORD_STORE_DIR = "/data/gitlab.com/mintel/infra/secret-store-v1";
+    };
+  };
+
   programs.zsh = {
     enable = true;
     enableCompletion = true;
     autosuggestion.enable = true;
     syntaxHighlighting.enable = true;
+    dirHashes = {
+      mintel = "/data/gitlab.com/mintel";
+      satoshi = "/data/gitlab.com/mintel/satoshi";
+    };
+    sessionVariables = {
+      EDITOR = "vim";
+    };
     initContent = ''
       # FUNCTIONS
       aws_env() {
@@ -240,10 +255,6 @@ in {
       tgs = "terragrunt show -json planfile --terragrunt-no-auto-init | jq . | less";
       tgt = "terragrunt taint --terragrunt-no-auto-init";
 
-    };
-    dirHashes = {
-      mintel = "/data/gitlab.com/mintel";
-      satoshi = "/data/gitlab.com/mintel/satoshi";
     };
     oh-my-zsh = {
       enable = true;
