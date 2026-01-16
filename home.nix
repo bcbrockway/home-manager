@@ -14,6 +14,7 @@ in {
     aws-nuke
     awscli2
     claude-code
+    pkgs-unstable.code-cursor-fhs
     d2
     direnv
     gita
@@ -28,6 +29,7 @@ in {
     kubectl
     kubectx
     kubernetes-helm
+    nodejs
     pre-commit
     slurp
     stern
@@ -48,7 +50,6 @@ in {
     #   # Site-specific additions and overrides. See local/README for details.
     #   include if exists <local/code>
     # }
-    vscode
     warp-terminal
     wireshark-qt
   ];
@@ -61,15 +62,13 @@ in {
 
   programs.git = {
     enable = true;
-    userName = "Bobby Brockway";
-    userEmail = "bbrockway@mintel.com";
     ignores = [
       ".direnv/"
       ".idea/"
       ".venv/"
       ".planfile"
     ];
-    extraConfig = {
+    settings = {
       diff.submodule = "log";
       filter.lfs = {
         smudge = "git-lfs smudge -- %f";
@@ -80,6 +79,8 @@ in {
       init.defaultBranch = "main";
       pull.rebase = false;
       status.submoduleSummary = true;
+      user.email = "bbrockway@mintel.com";
+      user.name = "Bobby Brockway";
     };
   };
 
@@ -209,8 +210,8 @@ in {
       export PATH="$PATH:/data/gitlab.com/mintel/satoshi/tools/eks-power"
 
       # SSH KEYS
-      if ! ssh-add -l | grep /home/bbrockway/.ssh/id_rsa > /dev/null; then
-        ssh-add /home/bbrockway/.ssh/id_rsa
+      if ! ssh-add -l | grep /home/${username}/.ssh/id_rsa > /dev/null; then
+        ssh-add /home/${username}/.ssh/id_rsa
       fi
     '';
      shellAliases = {
@@ -283,7 +284,7 @@ in {
   # You can update home Manager without changing this value. See
   # the home Manager release notes for a list of state version
   # changes in each release.
-  home.stateVersion = "25.05";
+  home.stateVersion = "25.11";
 
   # Let home-manager install and manage itself
   programs.home-manager.enable = true;
