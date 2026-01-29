@@ -1,8 +1,11 @@
 version: '3'
 tasks:
-  update:
+  update-packages:
     cmds:
     - home-manager switch --flake .#bbrockway
+  update-repos:
+    cmds:
+    - nix flake update
   clean:
     cmds:
     - nix-collect-garbage -d
