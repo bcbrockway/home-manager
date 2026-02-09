@@ -26,6 +26,7 @@ in {
     claude-code
     pkgs-unstable.code-cursor-fhs
     d2
+    envsubst
     direnv
     gita
     github-cli
