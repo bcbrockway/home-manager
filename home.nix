@@ -25,6 +25,7 @@ in {
     awscli2
     claude-code
     pkgs-unstable.code-cursor-fhs
+    cue
     d2
     envsubst
     direnv
