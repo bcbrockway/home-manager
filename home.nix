@@ -1,24 +1,31 @@
-{ lib, pkgs, pkgs-unstable, ... }: let
+{
+  lib,
+  pkgs,
+  pkgs-unstable,
+  ...
+}:
+let
   username = "bbrockway";
-in {
-  
+in
+{
+
   targets.genericLinux.enable = true;
-  
+
   home = {
     inherit username;
     homeDirectory = "/home/${username}";
     keyboard.layout = "uk";
   };
 
-#  dconf.settings = {
-#    # Prevent clashes with VS Code keybindings
-#    "org/gnome/desktop/wm/keybindings" = {
-#      move-to-workspace-up = ["<Super><Shift>Up"];
-#      move-to-workspace-down = ['<Super><Shift>Down'];
-#      move-to-workspace-left = ['<Super><Shift>Left'];
-#      move-to-workspace-right = ['<Super><Shift>Right'];
-#    }
-#  }
+  #  dconf.settings = {
+  #    # Prevent clashes with VS Code keybindings
+  #    "org/gnome/desktop/wm/keybindings" = {
+  #      move-to-workspace-up = ["<Super><Shift>Up"];
+  #      move-to-workspace-down = ['<Super><Shift>Down'];
+  #      move-to-workspace-left = ['<Super><Shift>Left'];
+  #      move-to-workspace-right = ['<Super><Shift>Right'];
+  #    }
+  #  }
 
   home.packages = with pkgs; [
     aws-nuke
@@ -27,6 +34,7 @@ in {
     pkgs-unstable.code-cursor-fhs
     cue
     d2
+    pkgs-unstable.devbox
     envsubst
     direnv
     gita
@@ -36,11 +44,13 @@ in {
     go-task
     grim
     hadolint
+    pkgs-unstable.jq
     pkgs-unstable.joplin-desktop
     k9s
     kubectl
     kubectx
     kubernetes-helm
+    nixfmt
     nodejs
     pre-commit
     slurp
@@ -67,6 +77,7 @@ in {
     warp-terminal
     whois
     wireshark-qt
+    pkgs-unstable.yq-go
   ];
 
   xdg = {
@@ -146,32 +157,7 @@ in {
         local APP_NAMES; APP_NAMES=( "$@" )
         local onJSON; onJSON='{"spec": {"syncPolicy": {"automated":{"allowEmpty": false, "prune": true, "selfHeal": true}}}}'
         local offJSON; offJSON='{"spec": {"syncPolicy": null}}'
- 
-        if [[ $STATUS == off ]]; then
-            kubectl patch -n argocd app argocd-bootstrap --patch "''${offJSON}" --type merge
-            for APP_NAME in "''${APP_NAMES[@]}"; do
-              kubectl patch -n argocd app "$APP_NAME" --patch "''${offJSON}" --type merge
-            done
-        elif [[ $STATUS == on ]]; then
-          if [[ ''${#APP_NAMES[@]} -eq 0 ]]; then
-            kubectl patch -n argocd app argocd-bootstrap --patch "''${onJSON}" --type merge
-          else
-            for APP_NAME in "''${APP_NAMES[@]}"; do
-              kubectl patch -n argocd app "$APP_NAME" --patch "''${onJSON}" --type merge
-            done
-          fi
-        else
-          echo "first argument should be \"off\" or \"on\""
-          exit
-        fi
-      }
-      
-      setf() {
-        local STATUS; STATUS=$1; shift
-        local APP_NAMES; APP_NAMES=( "$@" )
-        local onJSON; onJSON='{"spec": {"syncPolicy": {"automated":{"allowEmpty": false, "prune": true, "selfHeal": true}}}}'
-        local offJSON; offJSON='{"spec": {"syncPolicy": null}}'
- 
+
         if [[ $STATUS == off ]]; then
             kubectl patch -n argocd app argocd-bootstrap --patch "''${offJSON}" --type merge
             for APP_NAME in "''${APP_NAMES[@]}"; do
@@ -191,6 +177,30 @@ in {
         fi
       }
 
+      setf() {
+        local STATUS; STATUS=$1; shift
+        local APP_NAMES; APP_NAMES=( "$@" )
+        local onJSON; onJSON='{"spec": {"syncPolicy": {"automated":{"allowEmpty": false, "prune": true, "selfHeal": true}}}}'
+        local offJSON; offJSON='{"spec": {"syncPolicy": null}}'
+
+        if [[ $STATUS == off ]]; then
+            kubectl patch -n argocd app argocd-bootstrap --patch "''${offJSON}" --type merge
+            for APP_NAME in "''${APP_NAMES[@]}"; do
+              kubectl patch -n argocd app "$APP_NAME" --patch "''${offJSON}" --type merge
+            done
+        elif [[ $STATUS == on ]]; then
+          if [[ ''${#APP_NAMES[@]} -eq 0 ]]; then
+            kubectl patch -n argocd app argocd-bootstrap --patch "''${onJSON}" --type merge
+          else
+            for APP_NAME in "''${APP_NAMES[@]}"; do
+              kubectl patch -n argocd app "$APP_NAME" --patch "''${onJSON}" --type merge
+            done
+          fi
+        else
+          echo "first argument should be \"off\" or \"on\""
+          exit
+        fi
+      }
       # PROMPT MANIPULATION
       PROMPT='%{$fg_bold[green]%}''${AWS_VAULT}%{''$reset_color%}''${ret_status} %{''$fg[cyan]%}%~%{''$reset_color%} ''$(git_prompt_info) ''$(kube_ps1)
       ''$ '
@@ -229,7 +239,7 @@ in {
         ssh-add /home/${username}/.ssh/id_rsa
       fi
     '';
-     shellAliases = {
+    shellAliases = {
       # apt
       apti = "sudo apt install ";
       aptl = "sudo apt list ";
@@ -240,7 +250,7 @@ in {
 
       # aws
       ae = "aws_env ";
-      
+
       # general
       dirs = "dirs -v";
       ll = "ls -l";
@@ -249,7 +259,7 @@ in {
 
       # kubernetes
       kc = "kubectx ";
-      
+
       # terragrunt
       tga = "terragrunt apply --terragrunt-no-auto-init";
       tgap = "terragrunt apply planfile --terragrunt-no-auto-init";

@@ -9,33 +9,44 @@
     };
   };
 
-  outputs = { nixpkgs, nixpkgs-unstable, home-manager, ... }:
+  outputs =
+    {
+      nixpkgs,
+      nixpkgs-unstable,
+      home-manager,
+      ...
+    }:
     let
       lib = nixpkgs.lib;
       system = "x86_64-linux";
       pkgs = import nixpkgs {
         inherit system;
-        config.allowUnfreePredicate = pkg: builtins.elem (lib.getName pkg) [
-          "claude-code"
-          "code-cursor-fhs"
-          "cursor"
-          "terraform"
-          "vscode"
-          "warp-terminal"
-        ];
+        config.allowUnfreePredicate =
+          pkg:
+          builtins.elem (lib.getName pkg) [
+            "claude-code"
+            "code-cursor-fhs"
+            "cursor"
+            "terraform"
+            "vscode"
+            "warp-terminal"
+          ];
       };
       pkgs-unstable = import nixpkgs-unstable {
         inherit system;
-        config.allowUnfreePredicate = pkg: builtins.elem (lib.getName pkg) [
-          "claude-code"
-          "code-cursor-fhs"
-          "cursor"
-          "terraform"
-          "vscode"
-          "warp-terminal"
-        ];
+        config.allowUnfreePredicate =
+          pkg:
+          builtins.elem (lib.getName pkg) [
+            "claude-code"
+            "code-cursor-fhs"
+            "cursor"
+            "terraform"
+            "vscode"
+            "warp-terminal"
+          ];
       };
-    in {
+    in
+    {
       homeConfigurations = {
         bbrockway = home-manager.lib.homeManagerConfiguration {
           inherit pkgs;
