@@ -204,7 +204,7 @@ in
       # PROMPT MANIPULATION
       PROMPT='%{$fg_bold[green]%}''${AWS_VAULT}%{''$reset_color%}''${ret_status} %{''$fg[cyan]%}%~%{''$reset_color%} ''$(git_prompt_info) ''$(kube_ps1)
       ''$ '
-      
+
       # AWS PROFILE LOGIN
       if [ -n "''$AWS_PROFILE" ]; then
         export PROMPT="''$(tput setab 1)<<''${AWS_PROFILE}>>''$(tput sgr0) ''${PROMPT}"
@@ -213,7 +213,7 @@ in
         export AWS_ROLE_ARN=''$(aws sts get-caller-identity | jq -r .Arn)
         export AWS_PAGER=""
       fi
-      
+
       # ASDF
       . "$HOME/.asdf/asdf.sh"
       # append completions to fpath
