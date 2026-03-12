@@ -32,7 +32,7 @@
             "warp-terminal"
           ];
       };
-      pkgs-unstable = import nixpkgs-unstable {
+      latest = import nixpkgs-unstable {
         inherit system;
         config.allowUnfreePredicate =
           pkg:
@@ -52,14 +52,14 @@
           inherit pkgs;
           modules = [ ./home.nix ];
           extraSpecialArgs = {
-            inherit pkgs-unstable;
+            inherit latest;
           };
         };
         vagrant = home-manager.lib.homeManagerConfiguration {
           inherit pkgs;
           modules = [ ./vagrant.nix ];
           extraSpecialArgs = {
-            inherit pkgs-unstable;
+            inherit latest;
           };
         };
       };

@@ -1,7 +1,7 @@
 {
   lib,
   pkgs,
-  pkgs-unstable,
+  latest,
   ...
 }:
 let
@@ -28,35 +28,30 @@ in
   #  }
 
   home.packages = with pkgs; [
+    # AWS
     aws-nuke
     awscli2
-    pkgs-unstable.claude-code
-    cue
-    d2
-    pkgs-unstable.devbox
+    
+    # Languages
+    latest.cue
+    latest.d2
+    go
+    jsonnet
+    nodejs
+
+    # Tools
+    latest.claude-code
+    latest.devbox
     envsubst
     direnv
     gita
     github-cli
     glab
-    go
     go-task
-    grim
     hadolint
-    jsonnet
-    pkgs-unstable.jq
-    pkgs-unstable.joplin-desktop
-    k9s
-    kubectl
-    kubectx
-    kubernetes-helm
-    nixfmt
-    nodejs
+    jq
+    latest.joplin-desktop
     pre-commit
-    slurp
-    stern
-    swappy
-    swaylock-effects
     terraform
     uv
     # On Ubuntu 24.04, you must create/edit the relevant profile in /etc/apparmor.d for vscode to work properly without
@@ -73,11 +68,23 @@ in
     #   include if exists <local/code>
     # }
     # vscode
-    pkgs-unstable.velero
-    warp-terminal
     whois
     wireshark-qt
-    pkgs-unstable.yq-go
+    yq-go
+    
+    # Kubernetes
+    k9s
+    kubectl
+    kubectx
+    kubernetes-helm
+    stern
+    latest.velero
+    
+    # Sway
+    grim
+    slurp
+    swappy
+    swaylock-effects
   ];
 
   xdg = {
