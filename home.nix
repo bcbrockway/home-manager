@@ -30,8 +30,7 @@ in
   home.packages = with pkgs; [
     aws-nuke
     awscli2
-    claude-code
-    pkgs-unstable.code-cursor-fhs
+    pkgs-unstable.claude-code
     cue
     d2
     pkgs-unstable.devbox
@@ -44,6 +43,7 @@ in
     go-task
     grim
     hadolint
+    jsonnet
     pkgs-unstable.jq
     pkgs-unstable.joplin-desktop
     k9s
@@ -108,6 +108,11 @@ in
       user.email = "bbrockway@mintel.com";
       user.name = "Bobby Brockway";
     };
+  };
+
+  programs.mise = {
+    enable = true;
+    enableZshIntegration = true;
   };
 
   programs.password-store = {
