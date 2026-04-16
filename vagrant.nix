@@ -1,10 +1,14 @@
 { lib, ... }:
 {
   imports = [
-    ./home.nix
+    # ./home.nix
     ./modules/sway.nix
-    ./modules/to-replace.nix
+    # ./modules/to-replace.nix
   ];
+
+  # Required whenever ./home.nix is not imported (stateVersion lives there today).
+  home.stateVersion = "25.11";
+  targets.genericLinux.enable = true;
 
   # Override username for Vagrant environment
   home.username = lib.mkForce "vagrant";

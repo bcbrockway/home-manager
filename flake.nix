@@ -17,40 +17,21 @@
       ...
     }:
     let
-      lib = nixpkgs.lib;
       system = "x86_64-linux";
       pkgs = import nixpkgs {
         inherit system;
-        config.allowUnfreePredicate =
-          pkg:
-          builtins.elem (lib.getName pkg) [
-            "claude-code"
-            "code-cursor-fhs"
-            "cursor"
-            "terraform"
-            "vscode"
-            "warp-terminal"
-          ];
+        config.allowUnfree = true;
       };
       latest = import nixpkgs-unstable {
         inherit system;
-        config.allowUnfreePredicate =
-          pkg:
-          builtins.elem (lib.getName pkg) [
-            "claude-code"
-            "code-cursor-fhs"
-            "cursor"
-            "terraform"
-            "vscode"
-            "warp-terminal"
-          ];
+        config.allowUnfree = true;
       };
     in
     {
       homeConfigurations = {
         bbrockway = home-manager.lib.homeManagerConfiguration {
           inherit pkgs;
-          modules = [ ./home.nix ];
+          modules = [ ./work-laptop.nix ];
           extraSpecialArgs = {
             inherit latest;
           };

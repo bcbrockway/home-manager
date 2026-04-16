@@ -2,31 +2,17 @@
   lib,
   pkgs,
   latest,
+  username ? "bbrockway",
   ...
 }:
-let
-  username = "bbrockway";
-in
 {
-
-  targets.genericLinux.enable = true;
 
   home = {
     inherit username;
     homeDirectory = "/home/${username}";
     keyboard.layout = "uk";
   };
-
-  #  dconf.settings = {
-  #    # Prevent clashes with VS Code keybindings
-  #    "org/gnome/desktop/wm/keybindings" = {
-  #      move-to-workspace-up = ["<Super><Shift>Up"];
-  #      move-to-workspace-down = ['<Super><Shift>Down'];
-  #      move-to-workspace-left = ['<Super><Shift>Left'];
-  #      move-to-workspace-right = ['<Super><Shift>Right'];
-  #    }
-  #  }
-
+ 
   home.packages = with pkgs; [
     # AWS
     aws-nuke
@@ -42,8 +28,8 @@ in
     # Tools
     latest.claude-code
     latest.devbox
-    envsubst
     direnv
+    envsubst
     gita
     github-cli
     glab
@@ -68,6 +54,7 @@ in
     #   include if exists <local/code>
     # }
     # vscode
+    latest.vsce  # Visual Studio Code Extension Manager
     whois
     wireshark-qt
     yq-go
@@ -78,6 +65,7 @@ in
     kubectx
     kubernetes-helm
     stern
+    latest.telepresence2
     latest.velero
     
     # Sway
@@ -226,10 +214,6 @@ in
         export AWS_PAGER=""
       fi
 
-      # ASDF
-      . "$HOME/.asdf/asdf.sh"
-      # append completions to fpath
-      fpath=(''${ASDF_DIR}/completions $fpath)
       # initialise completions with ZSH's compinit
       autoload -Uz compinit && compinit
 
@@ -246,9 +230,11 @@ in
       # EKS-POWER
       export PATH="$PATH:/data/gitlab.com/mintel/satoshi/tools/eks-power"
 
-      # SSH KEYS
-      if ! ssh-add -l | grep /home/${username}/.ssh/id_rsa > /dev/null; then
-        ssh-add /home/${username}/.ssh/id_rsa
+      # SSH KEYS (skip without an agent, e.g. plain `vagrant ssh`)
+      if [[ -n "''${SSH_AUTH_SOCK:-}" ]] && [[ -f "''${HOME}/.ssh/id_rsa" ]]; then
+        if ! ssh-add -l 2>/dev/null | grep -qF "''${HOME}/.ssh/id_rsa"; then
+          ssh-add "''${HOME}/.ssh/id_rsa" 2>/dev/null || true
+        fi
       fi
     '';
     shellAliases = {

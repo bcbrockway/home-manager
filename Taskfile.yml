@@ -2,7 +2,7 @@ version: '3'
 tasks:
   install:
     cmds:
-    - home-manager switch --flake .#bbrockway
+    - home-manager switch -b backup --flake .#${USER}
   update-repos:
     cmds:
     - nix flake update
