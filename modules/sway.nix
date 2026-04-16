@@ -32,6 +32,24 @@ let
     }";
 in
 {
+  # Sway (no full GNOME session): GTK + fontconfig defaults so Chromium/Edge use Ubuntu-like UI
+  # fonts instead of heavy fallbacks. GNOME sessions keep their own dconf fonts; this only
+  # affects the Home Manager profile that imports this module.
+  gtk.enable = true;
+  gtk.font = {
+    package = pkgs.ubuntu-classic;
+    name = "Ubuntu";
+    size = 11;
+  };
+
+  fonts.fontconfig.enable = true;
+  fonts.fontconfig.defaultFonts = {
+    sansSerif = [ "Ubuntu" "Cantarell" "DejaVu Sans" ];
+    serif = [ "Ubuntu" "DejaVu Serif" ];
+    monospace = [ "Ubuntu Mono" "DejaVu Sans Mono" ];
+    emoji = [ "Noto Color Emoji" ];
+  };
+
   home.packages = with pkgs; [
     flameshot
     gnome-keyring
@@ -43,6 +61,8 @@ in
     rofi
     swaylock-effects
     vscode
+    cantarell-fonts
+    noto-fonts-color-emoji
   ];
 
   # Chromium does not treat sway as a GNOME-style session, so it will not pick the GNOME
@@ -122,6 +142,7 @@ in
 
       #tray {
         background-color: #242424;
+        padding-right: 10px;
       }
 
       @keyframes blink {
@@ -288,6 +309,19 @@ in
         XF86MonBrightnessDown = "exec --no-startup-id ${lightExe} -U 5";
         XF86MonBrightnessUp = "exec --no-startup-id ${lightExe} -A 5";
       };
+
+      workspaceOutputAssign = [
+        {output = "DP-4"; workspace = "1";}
+        {output = "DP-4"; workspace = "2";}
+        {output = "DP-4"; workspace = "3";}
+        {output = "DP-6"; workspace = "4";}
+        {output = "DP-6"; workspace = "5";}
+        {output = "DP-6"; workspace = "6";}
+        {output = "DP-6"; workspace = "7";}
+        {output = "DP-6"; workspace = "8";}
+        {output = "DP-6"; workspace = "9";}
+        {output = "DP-6"; workspace = "0";}
+      ];
     };
   };
 }

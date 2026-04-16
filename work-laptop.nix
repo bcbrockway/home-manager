@@ -13,7 +13,7 @@
   # My work laptop runs Ubuntu 24.04
   targets.genericLinux.enable = true;
 
-  # Get Flameshot to work in GNOME
+  # Get PrtSc key to work properly with Flameshot in GNOME
   dconf.settings = {
     "org/gnome/shell/keybindings" = {
       show-screenshot-ui = [];

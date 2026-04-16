@@ -1,0 +1,26 @@
+---
+description: Before enabling Home Manager options, check on-disk files the module would replace or merge with
+globs: "**/*.nix"
+alwaysApply: false
+---
+
+# Home Manager vs existing on-disk config
+
+When **adding or enabling** a Home Manager option that **generates or manages dotfiles** (for example `programs.*`, `services.*`, `gtk.*`, `fonts.fontconfig`, `xdg.configFile`, `wayland.windowManager.*`, `home.file`, `systemd.user.*`, `dconf.settings`), do this **before treating the change as done**:
+
+1. **Identify managed paths**  
+   Determine which paths HM will write (from option docs, `man home-configuration.nix`, or the [home-manager source](https://github.com/nix-community/home-manager) for that module). Typical examples: `~/.config/gtk-3.0/settings.ini`, `~/.config/fontconfig/conf.d/*`, `~/.ssh/config`, program-specific `~/.config/<app>/`.
+
+2. **Check the real home directory on the target machine**  
+   Use the Read tool on those paths for the user who will run `home-manager switch` (this repo uses `config.home.homeDirectory` / `home.username` from the flake module). If a path is missing or only contains defaults, note that explicitly.
+
+3. **If there is meaningful existing content**  
+   Port settings into Nix (`programs.foo.settings`, `gtk.*`, `xdg.configFile` with `mkMerge`, etc.), or confirm with the user that overwriting is intentional. Do not silently drop custom `settings.ini`, SSH snippets, or hand-maintained configs.
+
+4. **First-time HM takeover**  
+   If HM will **create** a file that did not exist, nothing to port—say so briefly.
+
+5. **Paths HM usually does not touch**  
+   Examples: `~/.config/gtk-3.0/bookmarks`, many `gtkfilechooser.ini` keys—enabling `gtk` does not replace those; still verify any sibling `settings.ini` you care about.
+
+When summarizing for the user, list **checked paths** and **findings** (missing / empty / custom) so the decision is auditable.
