@@ -2,35 +2,41 @@
   config,
   lib,
   pkgs,
+  latest,
   ...
 }:
 let
-  homeDir = config.home.homeDirectory;
   modifier = "Mod4";
 
   chromeExe = "${pkgs.google-chrome}/bin/google-chrome-stable";
   cursorExe = "/usr/share/cursor/cursor";
-  edge = "/opt/microsoft/msedge/microsoft-edge";
+  edge = "${pkgs.microsoft-edge}/bin/microsoft-edge";
+  # edge = "/opt/microsoft/msedge/microsoft-edge";
   flameshotExe = lib.getExe pkgs.flameshot;
   lightExe = lib.getExe pkgs.light;
   menu = "${lib.getExe pkgs.rofi} -show run | xargs swaymsg exec --";
   pactlExe = "${pkgs.pulseaudio}/bin/pactl";
   swaylockExe = lib.getExe pkgs.swaylock-effects;
   term = lib.getExe pkgs.alacritty;
+
+  dbusUpdateEnv = "${pkgs.dbus}/bin/dbus-update-activation-environment";
+  systemctlExe = "${pkgs.systemd}/bin/systemctl";
+  # One shell so each step finishes before the next (Sway does not wait between separate `exec` lines).
+  swayAudioPortalInit =
+    "${lib.getExe pkgs.bash} -c ${
+      lib.escapeShellArg (
+        "${dbusUpdateEnv} --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP=sway && "
+        + "${systemctlExe} --user stop pipewire wireplumber xdg-desktop-portal xdg-desktop-portal-wlr && "
+        + "${systemctlExe} --user start wireplumber xdg-desktop-portal"
+      )
+    }";
 in
 {
-  programs.alacritty = {
-    enable = true;
-    settings.window.padding = {
-      x = 10;
-      y = 10;
-    };
-  };
-
   home.packages = with pkgs; [
     flameshot
     gnome-keyring
-    google-chrome
+    latest.google-chrome
+    latest.microsoft-edge
     light
     networkmanagerapplet
     pulseaudio
@@ -49,27 +55,110 @@ in
     "password-store" = "gnome";
   };
 
-  # Waybar exits on startup without ~/.config/waybar/config; this generates it.
-  # systemd.enable stays false so Sway remains the process that spawns waybar (see bars below).
+  programs.alacritty = {
+    enable = true;
+    settings.window.padding = {
+      x = 10;
+      y = 10;
+    };
+  };
+
   programs.waybar = {
     enable = true;
     systemd.enable = false;
+    style = ''
+      * {
+        border: none;
+        border-radius: 0;
+        font-family: Ubuntu, sans-serif;
+        font-size: 14px;
+        min-height: 0;
+      }
+
+      window#waybar {
+        background: #242424;
+        color: white;
+      }
+
+      tooltip {
+        background: rgba(43, 48, 59, 0.5);
+        border: 1px solid rgba(100, 114, 125, 0.5);
+      }
+      tooltip label {
+        color: white;
+      }
+
+      #workspaces button {
+        padding: 0 5px;
+        background: transparent;
+        color: white;
+      }
+
+      #workspaces button.focused {
+        background: #64727D;
+      }
+
+      #mode, #clock, #battery {
+        padding: 0 10px;
+      }
+
+      #mode {
+        background: #64727D;
+      }
+
+      #clock {
+        background-color: #242424;
+      }
+
+      #battery {
+        background-color: #ffffff;
+        color: black;
+      }
+
+      #battery.charging {
+        color: white;
+        background-color: #26A65B;
+      }
+
+      #tray {
+        background-color: #242424;
+      }
+
+      @keyframes blink {
+        to {
+          background-color: #ffffff;
+          color: black;
+        }
+      }
+
+      #battery.warning:not(.charging) {
+        background: #f53c3c;
+        color: white;
+        animation-name: blink;
+        animation-duration: 0.5s;
+        animation-timing-function: steps(12);
+        animation-iteration-count: infinite;
+        animation-direction: alternate;
+      }
+    '';
     settings.mainBar = {
       layer = "top";
       position = "top";
-      height = 34;
+      height = 32;
       modules-left = [
         "sway/workspaces"
         "sway/mode"
       ];
-      modules-center = [ "sway/window" ];
-      modules-right = [ "clock" ];
+      modules-center = [ "clock" ];
+      modules-right = [ "tray" ];
       "sway/workspaces" = {
         disable-scroll = true;
-        all-outputs = true;
       };
-      "sway/window".max-length = 60;
-      "clock".format = "{:%Y-%m-%d %H:%M}";
+      "clock".format = "{:%d/%m/%Y %H:%M}";
+      "tray" = {
+        "icon-size" = 16;
+        spacing = 10;
+      };
     };
   };
 
@@ -129,9 +218,11 @@ in
       # };
 
       startup = [
-        { command = "${homeDir}/scripts/setmon"; always = false; }
         { command = "${pkgs.networkmanagerapplet}/bin/nm-applet"; always = false; }
-        { command = "${homeDir}/scripts/sway-startup.sh"; always = false; }
+        { command = swayAudioPortalInit; always = false; }
+        # Sway reload drops runtime output layout; kanshi keeps the same profile pointer and
+        # will not re-apply (https://github.com/emersion/kanshi/issues/43). Restart the user unit.
+        { command = "${pkgs.systemd}/bin/systemctl --user restart kanshi.service"; always = true; }
       ];
 
       bars = [
