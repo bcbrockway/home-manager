@@ -72,7 +72,6 @@
     grim
     slurp
     swappy
-    swaylock-effects
   ];
 
   xdg = {

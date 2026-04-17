@@ -33,7 +33,7 @@ Vagrant.configure("2") do |config|
 
     # INSTALL OS PACKAGES
     # apt-get update
-    apt-get install -y --no-install-recommends git
+    apt-get install -y --no-install-recommends git swaylock
     
     # INSTALL NIX
     if [[ ! -d /nix ]]; then
