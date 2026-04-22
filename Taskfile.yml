@@ -2,6 +2,7 @@ version: '3'
 tasks:
   install:
     cmds:
+    # home-manager activation syncs Mintel Cursor skills (see modules/cursor-mintel-skills.nix).
     - home-manager switch -b backup --flake .#${USER}
   update-repos:
     cmds:

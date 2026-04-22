@@ -41,6 +41,7 @@ in
   imports = [
     ./home.nix
     ./modules/sway.nix
+    ./modules/cursor-mintel-skills.nix
   ];
 
   # `_module` configures the Nix module evaluator (not normal HM options).
