@@ -1,9 +1,8 @@
-{
-  lib,
-  pkgs,
-  latest,
-  username ? "bbrockway",
-  ...
+{ lib
+, pkgs
+, latest
+, username ? "bbrockway"
+, ...
 }:
 {
 
@@ -12,12 +11,12 @@
     homeDirectory = "/home/${username}";
     keyboard.layout = "uk";
   };
- 
+
   home.packages = with pkgs; [
     # AWS
     aws-nuke
     awscli2
-    
+
     # Languages
     latest.cue
     latest.d2
@@ -54,11 +53,11 @@
     #   include if exists <local/code>
     # }
     # vscode
-    latest.vsce  # Visual Studio Code Extension Manager
+    latest.vsce # Visual Studio Code Extension Manager
     whois
     wireshark-qt
     yq-go
-    
+
     # Kubernetes
     k9s
     kubectl
@@ -67,7 +66,7 @@
     stern
     latest.telepresence2
     latest.velero
-    
+
     # Sway
     grim
     slurp
@@ -129,77 +128,9 @@
       EDITOR = "vim";
     };
     initContent = ''
-      # FUNCTIONS
-      aws_env() {
-        AWS_PROFILE="$1" zsh
-      }
-
-      adecode() {
-        aws sts decode-authorization-message --encoded-message="$1" --query="DecodedMessage" --output="text" | jq .
-      }
-
-      tgau() {
-        rm -rf .terragrunt-cache && terragrunt init -upgrade && terragrunt apply --terragrunt-no-auto-init
-      }
-
-      tgclean() {
-        if [[ -z $1 ]]; then
-          echo "ERROR: Must provide path"
-          exit 1
-        else
-          find $1 -type d -regex ".*\.terra\(form\|grunt-cache\)" -exec rm -rf {} \;
-        fi
-      }
-
-      selfheal() {
-        local STATUS; STATUS=$1; shift
-        local APP_NAMES; APP_NAMES=( "$@" )
-        local onJSON; onJSON='{"spec": {"syncPolicy": {"automated":{"allowEmpty": false, "prune": true, "selfHeal": true}}}}'
-        local offJSON; offJSON='{"spec": {"syncPolicy": null}}'
-
-        if [[ $STATUS == off ]]; then
-            kubectl patch -n argocd app argocd-bootstrap --patch "''${offJSON}" --type merge
-            for APP_NAME in "''${APP_NAMES[@]}"; do
-              kubectl patch -n argocd app "$APP_NAME" --patch "''${offJSON}" --type merge
-            done
-        elif [[ $STATUS == on ]]; then
-          if [[ ''${#APP_NAMES[@]} -eq 0 ]]; then
-            kubectl patch -n argocd app argocd-bootstrap --patch "''${onJSON}" --type merge
-          else
-            for APP_NAME in "''${APP_NAMES[@]}"; do
-              kubectl patch -n argocd app "$APP_NAME" --patch "''${onJSON}" --type merge
-            done
-          fi
-        else
-          echo "first argument should be \"off\" or \"on\""
-          exit
-        fi
-      }
-
-      setf() {
-        local STATUS; STATUS=$1; shift
-        local APP_NAMES; APP_NAMES=( "$@" )
-        local onJSON; onJSON='{"spec": {"syncPolicy": {"automated":{"allowEmpty": false, "prune": true, "selfHeal": true}}}}'
-        local offJSON; offJSON='{"spec": {"syncPolicy": null}}'
-
-        if [[ $STATUS == off ]]; then
-            kubectl patch -n argocd app argocd-bootstrap --patch "''${offJSON}" --type merge
-            for APP_NAME in "''${APP_NAMES[@]}"; do
-              kubectl patch -n argocd app "$APP_NAME" --patch "''${offJSON}" --type merge
-            done
-        elif [[ $STATUS == on ]]; then
-          if [[ ''${#APP_NAMES[@]} -eq 0 ]]; then
-            kubectl patch -n argocd app argocd-bootstrap --patch "''${onJSON}" --type merge
-          else
-            for APP_NAME in "''${APP_NAMES[@]}"; do
-              kubectl patch -n argocd app "$APP_NAME" --patch "''${onJSON}" --type merge
-            done
-          fi
-        else
-          echo "first argument should be \"off\" or \"on\""
-          exit
-        fi
-      }
+      bindkey "x1BB" backward-word
+      bindkey "x1BF" forward-word
+      
       # PROMPT MANIPULATION
       PROMPT='%{$fg_bold[green]%}''${AWS_VAULT}%{''$reset_color%}''${ret_status} %{''$fg[cyan]%}%~%{''$reset_color%} ''$(git_prompt_info) ''$(kube_ps1)
       ''$ '
@@ -278,6 +209,73 @@
       tgs = "terragrunt show -json planfile --terragrunt-no-auto-init | jq . | less";
       tgt = "terragrunt taint --terragrunt-no-auto-init";
 
+    };
+    siteFunctions = {
+      aws_env = ''
+        AWS_PROFILE="$1" zsh
+      '';
+      adecode = ''
+        aws sts decode-authorization-message --encoded-message="$1" --query="DecodedMessage" --output="text" | jq .
+      '';
+      tgau = ''
+        rm -rf .terragrunt-cache && terragrunt init -upgrade && terragrunt apply --terragrunt-no-auto-init
+      '';
+      tgclean = ''
+        if [[ -z $1 ]]; then
+          echo "ERROR: Must provide path"
+          exit 1
+        else
+          find $1 -type d -regex ".*\.terra\(form\|grunt-cache\)" -exec rm -rf {} \;
+        fi
+      '';
+      selfheal = ''
+        local STATUS; STATUS=$1; shift
+        local APP_NAMES; APP_NAMES=( "$@" )
+        local onJSON; onJSON='{"spec": {"syncPolicy": {"automated":{"allowEmpty": false, "prune": true, "selfHeal": true}}}}'
+        local offJSON; offJSON='{"spec": {"syncPolicy": null}}'
+
+        if [[ $STATUS == off ]]; then
+            kubectl patch -n argocd app argocd-bootstrap --patch "''${offJSON}" --type merge
+            for APP_NAME in "''${APP_NAMES[@]}"; do
+              kubectl patch -n argocd app "$APP_NAME" --patch "''${offJSON}" --type merge
+            done
+        elif [[ $STATUS == on ]]; then
+          if [[ ''${#APP_NAMES[@]} -eq 0 ]]; then
+            kubectl patch -n argocd app argocd-bootstrap --patch "''${onJSON}" --type merge
+          else
+            for APP_NAME in "''${APP_NAMES[@]}"; do
+              kubectl patch -n argocd app "$APP_NAME" --patch "''${onJSON}" --type merge
+            done
+          fi
+        else
+          echo "first argument should be \"off\" or \"on\""
+          exit
+        fi
+      '';
+      setf = ''
+        local STATUS; STATUS=$1; shift
+        local APP_NAMES; APP_NAMES=( "$@" )
+        local onJSON; onJSON='{"spec": {"syncPolicy": {"automated":{"allowEmpty": false, "prune": true, "selfHeal": true}}}}'
+        local offJSON; offJSON='{"spec": {"syncPolicy": null}}'
+
+        if [[ $STATUS == off ]]; then
+            kubectl patch -n argocd app argocd-bootstrap --patch "''${offJSON}" --type merge
+            for APP_NAME in "''${APP_NAMES[@]}"; do
+              kubectl patch -n argocd app "$APP_NAME" --patch "''${offJSON}" --type merge
+            done
+        elif [[ $STATUS == on ]]; then
+          if [[ ''${#APP_NAMES[@]} -eq 0 ]]; then
+            kubectl patch -n argocd app argocd-bootstrap --patch "''${onJSON}" --type merge
+          else
+            for APP_NAME in "''${APP_NAMES[@]}"; do
+              kubectl patch -n argocd app "$APP_NAME" --patch "''${onJSON}" --type merge
+            done
+          fi
+        else
+          echo "first argument should be \"off\" or \"on\""
+          exit
+        fi
+      '';
     };
     oh-my-zsh = {
       enable = true;

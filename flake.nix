@@ -10,11 +10,10 @@
   };
 
   outputs =
-    {
-      nixpkgs,
-      nixpkgs-unstable,
-      home-manager,
-      ...
+    { nixpkgs
+    , nixpkgs-unstable
+    , home-manager
+    , ...
     }:
     let
       system = "x86_64-linux";
@@ -44,5 +43,6 @@
           };
         };
       };
+      formatter.x86_64-linux = nixpkgs.legacyPackages.x86_64-linux.nixpkgs-fmt;
     };
 }

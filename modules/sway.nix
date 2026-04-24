@@ -1,9 +1,8 @@
-{
-  config,
-  lib,
-  pkgs,
-  latest,
-  ...
+{ config
+, lib
+, pkgs
+, latest
+, ...
 }:
 let
   modifier = "Mod4";
@@ -115,9 +114,15 @@ in
 
   programs.alacritty = {
     enable = true;
-    settings.window.padding = {
-      x = 10;
-      y = 10;
+    settings = {
+      keyboard.bindings = [
+        { key = "Right"; mods = "Control"; chars = "\x1BF"; }
+        { key = "Left"; mods = "Control"; chars = "\x1BB"; }
+      ];
+      window.padding = {
+        x = 10;
+        y = 10;
+      };
     };
   };
 
@@ -288,16 +293,16 @@ in
       };
 
       workspaceOutputAssign = [
-        {output = "DP-4"; workspace = "1";}
-        {output = "DP-4"; workspace = "2";}
-        {output = "DP-4"; workspace = "3";}
-        {output = "DP-6"; workspace = "4";}
-        {output = "DP-6"; workspace = "5";}
-        {output = "DP-6"; workspace = "6";}
-        {output = "DP-6"; workspace = "7";}
-        {output = "DP-6"; workspace = "8";}
-        {output = "DP-6"; workspace = "9";}
-        {output = "DP-6"; workspace = "0";}
+        { output = "DP-4"; workspace = "1"; }
+        { output = "DP-4"; workspace = "2"; }
+        { output = "DP-4"; workspace = "3"; }
+        { output = "DP-6"; workspace = "4"; }
+        { output = "DP-6"; workspace = "5"; }
+        { output = "DP-6"; workspace = "6"; }
+        { output = "DP-6"; workspace = "7"; }
+        { output = "DP-6"; workspace = "8"; }
+        { output = "DP-6"; workspace = "9"; }
+        { output = "DP-6"; workspace = "0"; }
       ];
     };
   };

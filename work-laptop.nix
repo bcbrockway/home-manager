@@ -1,8 +1,7 @@
-{
-  config,
-  lib,
-  pkgs,
-  ...
+{ config
+, lib
+, pkgs
+, ...
 }:
 let
   # GDM on Ubuntu only lists system-wide Wayland sessions (e.g. /usr/share/wayland-sessions).
@@ -79,7 +78,7 @@ in
   # Get PrtSc key to work properly with Flameshot in GNOME
   dconf.settings = {
     "org/gnome/shell/keybindings" = {
-      show-screenshot-ui = [];
+      show-screenshot-ui = [ ];
     };
     "org/gnome/settings-daemon/plugins/media-keys" = {
       custom-keybindings = [
