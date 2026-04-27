@@ -128,8 +128,10 @@
       EDITOR = "vim";
     };
     initContent = ''
-      bindkey "x1BB" backward-word
-      bindkey "x1BF" forward-word
+      bindkey "x1BB"    backward-word      # CTRL+LeftArrow
+      bindkey "x1BF"    forward-word       # CTRL+RightArrow
+      bindkey "^H"      backward-kill-word # CTRL+Backspace
+      bindkey "^[[3;5~" kill-word          # CTRL+Delete
       
       # PROMPT MANIPULATION
       PROMPT='%{$fg_bold[green]%}''${AWS_VAULT}%{''$reset_color%}''${ret_status} %{''$fg[cyan]%}%~%{''$reset_color%} ''$(git_prompt_info) ''$(kube_ps1)
