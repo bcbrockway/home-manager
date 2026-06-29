@@ -7,9 +7,11 @@
 let
   modifier = "Mod4";
 
+  bluemanAppletExe = lib.getExe' pkgs.blueman "blueman-applet";
+  bluemanManagerExe = lib.getExe' pkgs.blueman "blueman-manager";
   chromeExe = lib.getExe latest.google-chrome;
-  edgeExe = lib.getExe latest.microsoft-edge;
   dbusUpdateEnvExe = lib.getExe' pkgs.dbus "dbus-update-activation-environment";
+  edgeExe = lib.getExe latest.microsoft-edge;
   gnomeKeyringDaemonExe = lib.getExe' pkgs.gnome-keyring "gnome-keyring-daemon";
   lightExe = lib.getExe pkgs.light;
   nmAppletExe = lib.getExe' pkgs.networkmanagerapplet "nm-applet";
@@ -79,6 +81,7 @@ in
   home.packages =
     with pkgs;
     [
+      blueman
       flameshot
       gnome-keyring
       latest.google-chrome
@@ -148,6 +151,40 @@ in
       progress-color = "over #ccd0da";
       border-size = 1;
       icons = true;
+    };
+  };
+
+  # Blueman remembers window size in gsettings; a prior tiled session can save something
+  # like 1261x1384, which ignores floating_maximum_size once GTK calls resize().
+  dconf.settings."org/blueman/general" = {
+    window-properties = [ 600 480 0 0 ];
+  };
+
+  # Blueman's D-Bus activation files reference blueman-{applet,manager}.service; without
+  # these user units, "Devices" in the applet fails with NoSuchUnit.
+  systemd.user.services = {
+    blueman-applet = {
+      Unit = {
+        Description = "Bluetooth management applet";
+        After = [ "graphical-session.target" ];
+        PartOf = [ "graphical-session.target" ];
+        Requires = [ "graphical-session.target" ];
+        ConditionEnvironment = "WAYLAND_DISPLAY";
+      };
+      Service = {
+        Type = "dbus";
+        BusName = "org.blueman.Applet";
+        ExecStart = bluemanAppletExe;
+      };
+      Install.WantedBy = [ "graphical-session.target" ];
+    };
+    blueman-manager = {
+      Unit.Description = "Bluetooth Manager";
+      Service = {
+        Type = "dbus";
+        BusName = "org.blueman.Manager";
+        ExecStart = bluemanManagerExe;
+      };
     };
   };
 
@@ -263,6 +300,10 @@ in
             title = "Settings";
           };
           command = "floating enable, floating_maximum_size 1000 x 800";
+        }
+        {
+          criteria = { app_id = ".*blueman-manager.*"; };
+          command = "floating enable, resize set 600 480, floating_maximum_size 600 x 480";
         }
       ];
 

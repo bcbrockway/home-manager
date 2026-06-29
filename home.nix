@@ -36,7 +36,7 @@
     hadolint
     jq
     latest.joplin-desktop
-    pre-commit
+    latest.pre-commit
     terraform
     uv
     # On Ubuntu 24.04, you must create/edit the relevant profile in /etc/apparmor.d for vscode to work properly without

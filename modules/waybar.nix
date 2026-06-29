@@ -83,6 +83,7 @@
       layer = "top";
       position = "top";
       height = 32;
+      spacing = 10;
       modules-left = [
         "sway/workspaces"
         "sway/mode"
