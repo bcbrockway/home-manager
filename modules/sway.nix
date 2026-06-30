@@ -91,7 +91,6 @@ in
       networkmanagerapplet
       pulseaudio
       rofi
-      vscode
       cantarell-fonts
       noto-fonts-color-emoji
     ]
