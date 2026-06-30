@@ -1,5 +1,4 @@
-{ lib
-, pkgs
+{ pkgs
 , latest
 , username ? "bbrockway"
 , ...
@@ -36,6 +35,7 @@
     hadolint
     jq
     latest.joplin-desktop
+    latest.nixd
     latest.pre-commit
     terraform
     uv
