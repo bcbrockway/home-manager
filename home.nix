@@ -36,6 +36,7 @@
     jq
     latest.joplin-desktop
     latest.nixd
+    latest.obsidian
     latest.pre-commit
     terraform
     uv
@@ -67,10 +68,11 @@
     latest.telepresence2
     latest.velero
 
-    # Sway
+    # Sway / Wayland
     grim
     slurp
     swappy
+    wl-clipboard
   ];
 
   xdg = {
@@ -156,8 +158,8 @@
       export GOBIN="''${HOME}/go/bin"
       export PATH="$PATH:$GOBIN"
 
-      # SCRIPTS
-      export PATH="$PATH:''${HOME}/scripts"
+      # SCRIPTS & BINARIES
+      export PATH="$PATH:''${HOME}/scripts:''${HOME}/.local/bin"
 
       # EKS-POWER
       export PATH="$PATH:/data/gitlab.com/mintel/satoshi/tools/eks-power"
@@ -184,8 +186,8 @@
       # general
       dirs = "dirs -v";
       ll = "ls -l";
-      setclip = "xclip -selection c";
-      getclip = "xclip -selection c -o";
+      setclip = "wl-copy";
+      getclip = "wl-paste";
 
       # kubernetes
       kc = "kubectx ";
