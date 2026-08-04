@@ -56,6 +56,14 @@ let
   '';
 
   systemctlExe = lib.getExe' pkgs.systemd "systemctl";
+
+  opacityWindowCriteria = [
+    { app_id = "Alacritty"; }
+    { app_id = "Rofi"; }
+    { class = "Code"; }
+    { class = "Spotify"; }
+    { class = "mail.google.com__chat_u_0"; }
+  ];
 in
 {
   imports = [ ./waybar.nix ];
@@ -241,10 +249,6 @@ in
         "type:keyboard".xkb_layout = "gb";
       };
 
-      # output."*" = {
-      #   bg = "~/wallpaper/dolomites.jpg fill";
-      # };
-
       startup = [
         { command = nmAppletExe; always = false; }
         {
@@ -268,43 +272,28 @@ in
         { command = "${lib.getExe pkgs.waybar}"; }
       ];
 
-      window.commands = [
-        {
-          criteria = { app_id = "Alacritty"; };
+      window.commands =
+        map (criteria: {
+          inherit criteria;
           command = "opacity 0.9";
-        }
-        {
-          criteria = { app_id = "^chrome-.*"; };
-          command = "shortcuts_inhibitor disable";
-        }
-        {
-          criteria = { class = "Code"; };
-          command = "opacity 0.9";
-        }
-        {
-          criteria = { app_id = "Rofi"; };
-          command = "opacity 0.9";
-        }
-        {
-          criteria = { class = "Spotify"; };
-          command = "opacity 0.9";
-        }
-        {
-          criteria = { class = "mail.google.com__chat_u_0"; };
-          command = "opacity 0.9";
-        }
-        {
-          criteria = {
-            app_id = "zoom";
-            title = "Settings";
-          };
-          command = "floating enable, floating_maximum_size 1000 x 800";
-        }
-        {
-          criteria = { app_id = ".*blueman-manager.*"; };
-          command = "floating enable, resize set 600 480, floating_maximum_size 600 x 480";
-        }
-      ];
+        }) opacityWindowCriteria
+        ++ [
+          {
+            criteria = { app_id = "^chrome-.*"; };
+            command = "shortcuts_inhibitor disable";
+          }
+          {
+            criteria = {
+              app_id = "zoom";
+              title = "Settings";
+            };
+            command = "floating enable, floating_maximum_size 1000 x 800";
+          }
+          {
+            criteria = { app_id = ".*blueman-manager.*"; };
+            command = "floating enable, resize set 600 480, floating_maximum_size 600 x 480";
+          }
+        ];
 
       keybindings = lib.mkOptionDefault {
         "${modifier}+Shift+c" = "exec /usr/share/cursor/cursor";
@@ -331,19 +320,6 @@ in
         XF86MonBrightnessDown = "exec --no-startup-id ${lightExe} -U 5";
         XF86MonBrightnessUp = "exec --no-startup-id ${lightExe} -A 5";
       };
-
-      workspaceOutputAssign = [
-        { output = "DP-4"; workspace = "1"; }
-        { output = "DP-4"; workspace = "2"; }
-        { output = "DP-4"; workspace = "3"; }
-        { output = "DP-6"; workspace = "4"; }
-        { output = "DP-6"; workspace = "5"; }
-        { output = "DP-6"; workspace = "6"; }
-        { output = "DP-6"; workspace = "7"; }
-        { output = "DP-6"; workspace = "8"; }
-        { output = "DP-6"; workspace = "9"; }
-        { output = "DP-6"; workspace = "0"; }
-      ];
     };
   };
 }

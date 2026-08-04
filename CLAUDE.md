@@ -35,6 +35,9 @@ vagrant up
 
 # SSH into VM (after initial provisioning, uncomment config.ssh.username in Vagrantfile)
 vagrant ssh
+
+# Apply minimal Sway-only home-manager profile in the VM
+home-manager switch --flake .#vagrant
 ```
 
 ## Architecture
@@ -45,17 +48,25 @@ I'm running Ubuntu 24.04. Nix is installed in a multi-user configuration with ni
 ### Configuration Structure
 
 - **flake.nix**: Nix flake entrypoint that:
-  - Pins nixpkgs to unstable channel
-  - Follows home-manager master branch
-  - Allows unfree package `claude-code`
-  - Defines `bbrockway` home configuration for x86_64-linux
+  - Pins nixpkgs to `release-25.11` and exposes `nixpkgs-unstable` as `latest` for selected packages
+  - Follows home-manager `release-25.11`
+  - Allows unfree packages (e.g. `claude-code`, browser packages in sway module)
+  - Defines `bbrockway` (work laptop) and `vagrant` (minimal VM) home configurations
 
-- **home.nix**: Main home-manager configuration defining:
-  - User: `bbrockway`
-  - Package installations (AWS tools, Kubernetes tools, development utilities)
+- **work-laptop.nix**: Host entry for the work laptop; imports `home.nix`, sway, and cursor skills modules. Sets
+  `targets.genericLinux`, GDM Sway session install, kanshi display profiles, and GNOME Flameshot keybinding.
+
+- **home.nix**: Shared home-manager configuration defining:
+  - User: `bbrockway` (overridable via `_module.args.username`)
+  - Package installations (AWS, Kubernetes, development utilities)
   - Git configuration (user info, LFS, submodules)
-  - Zsh configuration with Oh My Zsh
-  - XDG desktop entries (e.g., Joplin)
+  - Zsh with Oh My Zsh, mise, and password-store
+
+- **modules/sway.nix**: Sway, waybar, GTK/fonts, kanshi service, mako, blueman, browser/Cursor config
+
+- **modules/cursor-mintel-skills.nix**: Activation hook to sync Mintel claude-code-plugins into `~/.cursor/skills`
+
+- **vagrant.nix**: Imports `home.nix` and sway for a realistic VM test profile; overrides username/homeDirectory for the `vagrant` user
 
 - **Vagrantfile**: Provisions Ubuntu 24.04 VM with:
   - Nix multi-user installation with flakes enabled
@@ -66,18 +77,17 @@ I'm running Ubuntu 24.04. Nix is installed in a multi-user configuration with ni
 
 Key zsh functions configured in `programs.zsh.siteFunctions`:
 
-- **ae**: Spawn new shell with AWS_PROFILE set
+- **aws_env** (alias `ae`): Spawn new shell with AWS_PROFILE set
 - **adecode**: Decode AWS authorization messages
 - **tgau**: Clean terragrunt cache and reinitialize
 - **tgclean**: Recursively remove terraform/terragrunt cache directories
-- **selfheal**: Toggle ArgoCD application auto-sync/self-heal settings
-- **setf**: Alias for selfheal (appears duplicated in config)
+- **selfheal** (alias `setf`): Toggle ArgoCD application auto-sync/self-heal settings
 
 ### Environment Configuration
 
 - Shell: zsh with Oh My Zsh (robbyrussell theme)
 - Plugins: aws, direnv, git, kube-ps1, kubectl, timer
-- ASDF version manager integrated
+- mise version manager integrated
 - Vagrant default provider: libvirt
 - AWS SSO login on shell start when AWS_PROFILE is set
 
@@ -86,10 +96,13 @@ Key zsh functions configured in `programs.zsh.siteFunctions`:
 The configuration installs packages across several domains:
 
 - **AWS**: aws-nuke, awscli2
-- **Kubernetes**: k9s, kubectl, kubectx, kubernetes-helm
-- **Development**: go, go-task, pre-commit, direnv, uv
-- **Utilities**: github-cli, d2, grim, slurp, swappy, swaylock-effects
-- **Applications**: claude-code, joplin-desktop, vscode, warp-terminal
+- **Kubernetes**: k9s, kubectl, kubectx, kubernetes-helm, stern, telepresence2, velero
+- **Development**: go, go-task, pre-commit, direnv, uv, terraform, cue, d2, jsonnet, nodejs
+- **Utilities**: github-cli, glab, grim, slurp, swappy, wl-clipboard, jq, yq-go
+- **Applications**: claude-code, joplin-desktop, obsidian, devbox, vsce
+
+Sway-related packages (flameshot, browsers, rofi, etc.) are in `modules/sway.nix`. On Ubuntu, swaylock comes from apt
+(`sudo apt install -y swaylock`); Nix `swaylock-effects` is used only on non-genericLinux hosts.
 
 ### Terragrunt Workflow
 
@@ -99,4 +112,4 @@ Extensive shell aliases configured for terragrunt operations with common pattern
 - Source updates: tgau, tgpu, tgpau, tgdau (with --terragrunt-source-update)
 - All commands use --terragrunt-no-auto-init except init
 - Parallelism set to 4 for run-all operations
-- Plans saved to `.planfile` (in gitignore)
+- Plans saved to `planfile` (gitignore also lists `.planfile`)

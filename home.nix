@@ -9,6 +9,16 @@
     inherit username;
     homeDirectory = "/home/${username}";
     keyboard.layout = "uk";
+    sessionPath = [
+      "$HOME/go/bin"
+      "$HOME/scripts"
+      "$HOME/.local/bin"
+      "/data/gitlab.com/mintel/satoshi/tools/eks-power"
+    ];
+    sessionVariables = {
+      GOBIN = "/home/${username}/go/bin";
+      VAGRANT_DEFAULT_PROVIDER = "libvirt";
+    };
   };
 
   home.packages = with pkgs; [
@@ -40,20 +50,7 @@
     latest.pre-commit
     terraform
     uv
-    # On Ubuntu 24.04, you must create/edit the relevant profile in /etc/apparmor.d for vscode to work properly without
-    # the --no-sandbox flag:
-    #
-    # # This profile allows everything and only exists to give the
-    # # application a name instead of having the label "unconfined"
-    #
-    # abi <abi/4.0>, include <tunables/global>
-    #
-    # profile vscode /nix/store/*-vscode-*/bin/code flags=(unconfined) { userns,
-    #
-    #   # Site-specific additions and overrides. See local/README for details.
-    #   include if exists <local/code>
-    # }
-    # vscode
+    # Nix vscode needs an AppArmor profile on Ubuntu 24.04; see home-manager docs / local AppArmor setup.
     latest.vsce # Visual Studio Code Extension Manager
     whois
     wireshark-qt
@@ -143,26 +140,12 @@
       if [ -n "''$AWS_PROFILE" ]; then
         export PROMPT="''$(tput setab 1)<<''${AWS_PROFILE}>>''$(tput sgr0) ''${PROMPT}"
         aws sso login --profile "''$AWS_PROFILE"
-        #eval ''$(aws configure export-credentials --profile dev --format env)
         export AWS_ROLE_ARN=''$(aws sts get-caller-identity | jq -r .Arn)
         export AWS_PAGER=""
       fi
 
       # initialise completions with ZSH's compinit
       autoload -Uz compinit && compinit
-
-      # VAGRANT
-      export VAGRANT_DEFAULT_PROVIDER=libvirt
-
-      # GO
-      export GOBIN="''${HOME}/go/bin"
-      export PATH="$PATH:$GOBIN"
-
-      # SCRIPTS & BINARIES
-      export PATH="$PATH:''${HOME}/scripts:''${HOME}/.local/bin"
-
-      # EKS-POWER
-      export PATH="$PATH:/data/gitlab.com/mintel/satoshi/tools/eks-power"
 
       # SSH KEYS (skip without an agent, e.g. plain `vagrant ssh`)
       if [[ -n "''${SSH_AUTH_SOCK:-}" ]] && [[ -f "''${HOME}/.ssh/id_rsa" ]]; then
@@ -212,7 +195,6 @@
       tgr = "terragrunt refresh --terragrunt-no-auto-init";
       tgs = "terragrunt show -json planfile --terragrunt-no-auto-init | jq . | less";
       tgt = "terragrunt taint --terragrunt-no-auto-init";
-
     };
     siteFunctions = {
       aws_env = ''
@@ -256,30 +238,6 @@
           exit
         fi
       '';
-      setf = ''
-        local STATUS; STATUS=$1; shift
-        local APP_NAMES; APP_NAMES=( "$@" )
-        local onJSON; onJSON='{"spec": {"syncPolicy": {"automated":{"allowEmpty": false, "prune": true, "selfHeal": true}}}}'
-        local offJSON; offJSON='{"spec": {"syncPolicy": null}}'
-
-        if [[ $STATUS == off ]]; then
-            kubectl patch -n argocd app argocd-bootstrap --patch "''${offJSON}" --type merge
-            for APP_NAME in "''${APP_NAMES[@]}"; do
-              kubectl patch -n argocd app "$APP_NAME" --patch "''${offJSON}" --type merge
-            done
-        elif [[ $STATUS == on ]]; then
-          if [[ ''${#APP_NAMES[@]} -eq 0 ]]; then
-            kubectl patch -n argocd app argocd-bootstrap --patch "''${onJSON}" --type merge
-          else
-            for APP_NAME in "''${APP_NAMES[@]}"; do
-              kubectl patch -n argocd app "$APP_NAME" --patch "''${onJSON}" --type merge
-            done
-          fi
-        else
-          echo "first argument should be \"off\" or \"on\""
-          exit
-        fi
-      '';
     };
     oh-my-zsh = {
       enable = true;
@@ -295,10 +253,6 @@
       theme = "robbyrussell";
     };
   };
-
-  # programs.vscode = {
-  #   enable = true;
-  # };
 
   # This value determines the home Manager release that your
   # configuration is compatible with. This helps avoid breakage

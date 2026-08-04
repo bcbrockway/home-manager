@@ -1,19 +1,14 @@
 { lib, ... }:
 {
   imports = [
-    # ./home.nix
+    ./home.nix
     ./modules/sway.nix
-    # ./modules/to-replace.nix
   ];
 
-  # Required whenever ./home.nix is not imported (stateVersion lives there today).
-  home.stateVersion = "25.11";
+  _module.args.username = "vagrant";
   targets.genericLinux.enable = true;
 
-  # Override username for Vagrant environment
   home.username = lib.mkForce "vagrant";
   home.homeDirectory = lib.mkForce "/home/vagrant";
-
-  # Override oh-my-zsh custom path for Vagrant user
   programs.zsh.oh-my-zsh.custom = lib.mkForce "/home/vagrant/.oh-my-zsh/custom";
 }

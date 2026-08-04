@@ -75,22 +75,19 @@ in
     '';
   };
 
-  # Get PrtSc key to work properly with Flameshot in GNOME
-  dconf.settings = {
-    "org/gnome/shell/keybindings" = {
-      show-screenshot-ui = [ ];
-    };
-    "org/gnome/settings-daemon/plugins/media-keys" = {
-      custom-keybindings = [
-        "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/"
-      ];
-    };
-    "org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0" = {
-      name = "Flameshot";
-      command = "script -q -c 'flameshot gui' /dev/null";
-      binding = "Print";
-    };
-  };
+  # Dock monitor output names (host-specific; kanshi profiles below use the same hardware).
+  wayland.windowManager.sway.config.workspaceOutputAssign = [
+    { output = "DP-4"; workspace = "1"; }
+    { output = "DP-4"; workspace = "2"; }
+    { output = "DP-4"; workspace = "3"; }
+    { output = "DP-6"; workspace = "4"; }
+    { output = "DP-6"; workspace = "5"; }
+    { output = "DP-6"; workspace = "6"; }
+    { output = "DP-6"; workspace = "7"; }
+    { output = "DP-6"; workspace = "8"; }
+    { output = "DP-6"; workspace = "9"; }
+    { output = "DP-6"; workspace = "0"; }
+  ];
 
   # Settings for kanshi service (autorandr replacement) to auto-configure display settings based on what is connected.
   services.kanshi.settings = [
