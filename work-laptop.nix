@@ -35,6 +35,26 @@ let
     install -m755 ${swayNixLauncher} /usr/local/bin/sway-nix
     install -m644 ${swayNixDesktop} /usr/local/share/wayland-sessions/sway-nix.desktop
   '';
+
+  kanshiOutput =
+    screen:
+    { status, ... } @ args:
+    {
+      criteria = screen.criteria;
+      inherit status;
+    }
+    // lib.optionalAttrs (status == "enable") { mode = screen.mode; }
+    // lib.removeAttrs args [ "status" ];
+
+  laptopScreen = {
+    criteria = "BOE 0x0B99 Unknown";
+    mode = "1920x1200@60.002";
+  };
+
+  espressoScreen = {
+    criteria = "ESP eD15T(2022)*";
+    mode = "1920x1080@60.000";
+  };
 in
 {
   imports = [
@@ -94,32 +114,31 @@ in
     {
       profile.name = "laptop_only";
       profile.outputs = [
-        {
-          criteria = "BOE 0x0B99 Unknown";
-          status = "enable";
-          mode = "1920x1200@60.002";
-          position = "0,0";
-        }
+        (kanshiOutput laptopScreen { status = "enable"; position = "0,0"; })
       ];
     }
     {
       profile.name = "home_docked";
       profile.outputs = [
+        (kanshiOutput laptopScreen { status = "disable"; })
+        (kanshiOutput espressoScreen { status = "enable"; position = "310,1440"; })
         {
           criteria = "Ancor Communications Inc ROG PG279Q*";
           status = "enable";
           mode = "2560x1440@59.951";
           position = "0,0";
         }
+      ];
+    }
+    {
+      profile.name = "work_docked";
+      profile.outputs = [
+        (kanshiOutput laptopScreen { status = "enable"; position = "310,1440"; })
         {
-          criteria = "ESP eD15T(2022)*";
+          criteria = "Dell Inc. DELL U2722D HCFT093";
           status = "enable";
-          mode = "1920x1080@60.000";
-          position = "310,1440";
-        }
-        {
-          criteria = "BOE 0x0B99 Unknown";
-          status = "disable";
+          mode = "2560x1440@59.951";
+          position = "0,0";
         }
       ];
     }

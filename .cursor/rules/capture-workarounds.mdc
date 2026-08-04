@@ -1,0 +1,26 @@
+---
+description: Record failed-first-attempt learnings as Cursor rules in this repo
+alwaysApply: true
+---
+
+# Capture workarounds as rules
+
+When a task **does not work on the first attempt** and you find a fix, workaround, or non-obvious constraint, **add or update a rule** in `.cursor/rules/` before finishing.
+
+## When to write a rule
+
+- Syntax or API usage that failed and required correction (e.g. invalid Nix destructuring)
+- Tooling/environment constraints (e.g. sandbox blocking `nix` cache writes)
+- Project-specific conventions discovered the hard way
+
+## How to write it
+
+1. **Prefer updating** an existing rule if the learning fits its scope; otherwise create a focused `.mdc` file (one concern per rule).
+2. Use frontmatter: `description`, and either `globs` (file-specific) or `alwaysApply: true` (agent-wide behavior).
+3. Keep it short and actionable: wrong example, correct example, and the command or pattern to use.
+4. Do **not** ask the user first — capture the learning as part of the same task.
+
+## What not to record
+
+- One-off typos or transient network failures with no reusable lesson
+- Secrets, credentials, or machine-specific paths that should not be committed

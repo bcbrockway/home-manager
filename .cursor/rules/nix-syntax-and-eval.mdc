@@ -1,0 +1,39 @@
+---
+description: Nix language pitfalls and flake eval commands in this repo
+globs: "**/*.nix"
+alwaysApply: false
+---
+
+# Nix syntax and evaluation
+
+## Attribute-set rest patterns in lambdas
+
+Nix does **not** allow naming the rest pattern in a destructured argument. This is a syntax error:
+
+```nix
+# BAD — `...attrs` is invalid
+laptopOutput = { status, ...attrs }: laptopScreen // attrs;
+```
+
+Use `@` to bind the full argument, then peel off known keys:
+
+```nix
+# GOOD
+laptopOutput =
+  { status, ... } @ args:
+  laptopScreen
+  // { inherit status; }
+  // lib.removeAttrs args [ "status" ];
+```
+
+## Validating flake output
+
+After editing `.nix` files, validate with:
+
+```bash
+nix eval .#homeConfigurations.bbrockway.config.services.kanshi.settings --json
+```
+
+Adjust the attribute path to match what you changed.
+
+The default sandbox blocks writes to `~/.cache/nix/` (e.g. `fetcher-cache-v4.sqlite`), so `nix eval` / `nix build` / `home-manager switch` dry-runs often fail with `attempt to write a readonly database`. Re-run with `required_permissions: ["all"]` on the Shell tool.
