@@ -1,19 +1,27 @@
 ---
-description: Record failed-first-attempt learnings as Cursor rules in this repo
+description: Record reusable failed-first-attempt learnings as rules or code comments
 alwaysApply: true
 ---
 
-# Capture workarounds as rules
+# Capture workarounds
 
-When a task **does not work on the first attempt** and you find a fix, workaround, or non-obvious constraint, **add or update a rule** in `.cursor/rules/` before finishing.
+When a task **does not work on the first attempt** and you find a fix, workaround, or non-obvious constraint, **capture the learning before finishing** — but choose the right place.
 
-## When to write a rule
+## Prefer a code comment when
 
-- Syntax or API usage that failed and required correction (e.g. invalid Nix destructuring)
-- Tooling/environment constraints (e.g. sandbox blocking `nix` cache writes)
-- Project-specific conventions discovered the hard way
+- The fix is **machine-specific** or will only ever be applied once (e.g. udev for one laptop's backlight)
+- The learning belongs next to the code it explains (activation hook, udev rule, host-specific option)
+- A future reader only needs context while editing that file
 
-## How to write it
+Keep comments short: what broke, what fixed it, how to verify.
+
+## Prefer a Cursor rule when
+
+- Syntax or API usage that failed and will trip you up again (e.g. invalid Nix destructuring)
+- Tooling/environment constraints that affect many tasks (e.g. sandbox blocking `nix` cache writes)
+- Project-wide conventions discovered the hard way
+
+## How to write a rule
 
 1. **Prefer updating** an existing rule if the learning fits its scope; otherwise create a focused `.mdc` file (one concern per rule).
 2. Use frontmatter: `description`, and either `globs` (file-specific) or `alwaysApply: true` (agent-wide behavior).
@@ -24,3 +32,4 @@ When a task **does not work on the first attempt** and you find a fix, workaroun
 
 - One-off typos or transient network failures with no reusable lesson
 - Secrets, credentials, or machine-specific paths that should not be committed
+- Single-host setup steps that are already documented in the relevant `.nix` file
