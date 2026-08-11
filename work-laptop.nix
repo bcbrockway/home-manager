@@ -183,7 +183,7 @@ in
       profile.outputs = [
         (kanshiOutput laptopScreen { status = "enable"; position = "310,1440"; })
         {
-          criteria = "Dell Inc. DELL U2722D HCFT093";
+          criteria = "Dell Inc. DELL U2722D*";
           status = "enable";
           mode = "2560x1440@59.951";
           position = "0,0";

@@ -279,8 +279,17 @@ in
         }) opacityWindowCriteria
         ++ [
           {
-            criteria = { app_id = "^chrome-.*"; };
+            criteria = {
+              app_id = "^chrome-.*";
+            };
             command = "shortcuts_inhibitor disable";
+          }
+          {
+            criteria = {
+              app_id = "^chrome-.*";
+              title = "Bitwarden";
+            };
+            command = "floating enable, resize set 485 700";
           }
           {
             criteria = {
@@ -290,7 +299,9 @@ in
             command = "floating enable, floating_maximum_size 1000 x 800";
           }
           {
-            criteria = { app_id = ".*blueman-manager.*"; };
+            criteria = { 
+              app_id = ".*blueman-manager.*";
+            };
             command = "floating enable, resize set 600 480, floating_maximum_size 600 x 480";
           }
         ];
