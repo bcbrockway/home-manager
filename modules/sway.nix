@@ -125,10 +125,15 @@ in
   programs.alacritty = {
     enable = true;
     settings = {
-      keyboard.bindings = [
-        { key = "Right"; mods = "Control"; chars = "\x1BF"; }
-        { key = "Left"; mods = "Control"; chars = "\x1BB"; }
-      ];
+      # Nix strings have no \x or \u escape, so ESC comes from a JSON literal.
+      keyboard.bindings =
+        let
+          esc = builtins.fromJSON ''"\u001b"'';
+        in
+        [
+          { key = "Right"; mods = "Control"; chars = "${esc}[1;5C"; }
+          { key = "Left"; mods = "Control"; chars = "${esc}[1;5D"; }
+        ];
       window.padding = {
         x = 10;
         y = 10;

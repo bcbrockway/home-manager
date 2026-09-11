@@ -127,8 +127,8 @@
       EDITOR = "vim";
     };
     initContent = ''
-      bindkey "x1BB"    backward-word      # CTRL+LeftArrow
-      bindkey "x1BF"    forward-word       # CTRL+RightArrow
+      bindkey "^[[1;5D" backward-word      # CTRL+LeftArrow
+      bindkey "^[[1;5C" forward-word       # CTRL+RightArrow
       bindkey "^H"      backward-kill-word # CTRL+Backspace
       bindkey "^[[3;5~" kill-word          # CTRL+Delete
       

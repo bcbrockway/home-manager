@@ -26,6 +26,22 @@ laptopOutput =
   // lib.removeAttrs args [ "status" ];
 ```
 
+## Control characters in strings
+
+Nix has no `\x` or `\u` escape. `"\x1BF"` does **not** contain ESC — the backslash is dropped and the
+string is the literal `x1BF`, which silently lands in generated config files.
+
+```nix
+# BAD — literal "x1BF", not ESC [ 1 ; 5 C
+chars = "\x1BF";
+
+# GOOD — real ESC byte
+let esc = builtins.fromJSON ''"\u001b"'';
+in "${esc}[1;5C"
+```
+
+In shell/zsh snippets written as Nix strings, use the tool's own escape instead (zsh `bindkey "^[[1;5C"`).
+
 ## Validating flake output
 
 After editing `.nix` files, validate with:
