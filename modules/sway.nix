@@ -14,7 +14,12 @@ let
   edgeExe = lib.getExe latest.microsoft-edge;
   gnomeKeyringDaemonExe = lib.getExe' pkgs.gnome-keyring "gnome-keyring-daemon";
   lightExe = lib.getExe pkgs.light;
-  nmAppletExe = lib.getExe' pkgs.networkmanagerapplet "nm-applet";
+  # Nix nm-applet links nixpkgs libnm, which does not load Ubuntu VPN editor plugins
+  # under /usr/lib/x86_64-linux-gnu/NetworkManager/ (e.g. openvpn). Use the OS applet on
+  # genericLinux; apt: network-manager-openvpn-gnome.
+  nmAppletHost = config.targets.genericLinux.enable;
+  nmAppletExe =
+    if nmAppletHost then "/usr/bin/nm-applet" else lib.getExe' pkgs.networkmanagerapplet "nm-applet";
   pactlExe = lib.getExe' pkgs.pulseaudio "pactl";
   # Nix-built swaylock links nixpkgs libpam, which resolves PAM modules under the
   # nix store — Ubuntu's common-* reference pam_sss, pam_systemd, etc. in
@@ -96,13 +101,13 @@ in
       latest.microsoft-edge
       libnotify
       light
-      networkmanagerapplet
       pulseaudio
       rofi
       cantarell-fonts
       noto-fonts-color-emoji
     ]
     ++ lib.optionals (!swaylockHost) [ swaylock-effects ]
+    ++ lib.optionals (!nmAppletHost) [ networkmanagerapplet ]
     ++ [ hmSwayidle ];
 
   # Chromium does not treat sway as a GNOME-style session, so it will not pick the GNOME

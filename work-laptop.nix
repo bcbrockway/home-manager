@@ -89,6 +89,7 @@ in
   # My work laptop runs Ubuntu 24.04
   targets.genericLinux.enable = true;
   # Sway uses /usr/bin/swaylock (see modules/sway.nix).  Install: sudo apt install -y swaylock
+  # nm-applet uses /usr/bin/nm-applet for VPN editor plugins.  Install: sudo apt install -y network-manager-openvpn-gnome
 
   home.activation = lib.mkMerge [
     (lib.mkIf gdmSwayNixEnabled {
