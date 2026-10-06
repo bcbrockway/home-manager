@@ -12,6 +12,7 @@ let
   chromeExe = lib.getExe latest.google-chrome;
   dbusUpdateEnvExe = lib.getExe' pkgs.dbus "dbus-update-activation-environment";
   edgeExe = lib.getExe latest.microsoft-edge;
+  flameshotExe = lib.getExe latest.flameshot;
   gnomeKeyringDaemonExe = lib.getExe' pkgs.gnome-keyring "gnome-keyring-daemon";
   lightExe = lib.getExe pkgs.light;
   # Nix nm-applet links nixpkgs libnm, which does not load Ubuntu VPN editor plugins
@@ -95,7 +96,6 @@ in
     with pkgs;
     [
       blueman
-      flameshot
       gnome-keyring
       latest.google-chrome
       latest.microsoft-edge
@@ -148,6 +148,21 @@ in
 
   services.kanshi = {
     enable = true;
+  };
+
+  # v13.x mishandles multi-monitor geometry on Wayland; use unstable (14.x).
+  # v14 removed the grim adapter; leftover useGrimAdapter / disabledGrimWarning
+  # keys make `flameshot gui` show a resolver dialog. Remove/Resolve All cannot
+  # rewrite the HM-managed (nix-store) flameshot.ini.
+  services.flameshot = {
+    enable = true;
+    package = latest.flameshot;
+    settings = {
+      General = {
+        drawColor = "#d3ff00";
+        savePath = "${config.home.homeDirectory}/Pictures/Screenshots";
+      };
+    };
   };
 
   # Desktop notifications (D-Bus-activatable org.freedesktop.Notifications).
@@ -231,6 +246,8 @@ in
     # focus jump). Float these surfaces instead.
     extraConfig = ''
       for_window [tiling shell="xdg_shell" app_id="^$"] floating enable
+      # Flameshot overlay must float at (0,0) or it only covers one output on multi-monitor setups.
+      for_window [app_id="flameshot"] border pixel 0, floating enable, fullscreen disable, move position 0 0
     '';
 
     config = {
@@ -334,7 +351,7 @@ in
         "${modifier}+f" = "fullscreen";
 
 
-        Print = "exec ${lib.getExe pkgs.flameshot} gui";
+        Print = "exec ${flameshotExe} gui";
         XF86AudioMute = "exec --no-startup-id ${pactlExe} set-sink-mute 0 toggle";
         XF86AudioLowerVolume = "exec --no-startup-id ${pactlExe} set-sink-volume 0 -5%";
         XF86AudioRaiseVolume = "exec --no-startup-id ${pactlExe} set-sink-volume 0 +5%";
