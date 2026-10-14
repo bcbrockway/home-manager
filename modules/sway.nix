@@ -103,6 +103,7 @@ in
       light
       pulseaudio
       rofi
+      latest.pwvucontrol
       cantarell-fonts
       noto-fonts-color-emoji
     ]
@@ -326,10 +327,16 @@ in
             command = "floating enable, floating_maximum_size 1000 x 800";
           }
           {
-            criteria = { 
+            criteria = {
               app_id = ".*blueman-manager.*";
             };
             command = "floating enable, resize set 600 480, floating_maximum_size 600 x 480";
+          }
+          {
+            criteria = {
+              app_id = "^com\\.saivert\\.pwvucontrol$";
+            };
+            command = "floating enable, resize set 800 600";
           }
         ];
 
@@ -352,6 +359,7 @@ in
 
 
         Print = "exec ${flameshotExe} gui";
+        "${modifier}+Shift+s" = "exec --no-startup-id ${lib.getExe latest.pwvucontrol}";
         XF86AudioMute = "exec --no-startup-id ${pactlExe} set-sink-mute 0 toggle";
         XF86AudioLowerVolume = "exec --no-startup-id ${pactlExe} set-sink-volume 0 -5%";
         XF86AudioRaiseVolume = "exec --no-startup-id ${pactlExe} set-sink-volume 0 +5%";
