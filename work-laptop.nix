@@ -39,7 +39,9 @@ let
   # Sway binds XF86MonBrightness* to `light` (modules/sway.nix). On Ubuntu, sysfs backlight
   # is root:root 0644 so `light` fails silently until udev chowns to video (use %k, not %S%p).
   # Also adds the user to `video` on first switch; re-login once if needed. Test: `light -A 5`.
-  genericLinuxBacklightEnabled = pkgs.stdenv.isLinux && config.targets.genericLinux.enable;
+  # This file is only imported by the work-laptop profile (vagrant.nix imports home.nix
+  # directly), so gating /etc-touching activations on genericLinux is laptop-only.
+  genericLinuxEnabled = pkgs.stdenv.isLinux && config.targets.genericLinux.enable;
 
   backlightUdevRule = pkgs.writeText "90-hm-backlight.rules" ''
     SUBSYSTEM=="backlight", TAG+="uaccess"
@@ -52,6 +54,28 @@ let
     install -m644 ${backlightUdevRule} /etc/udev/rules.d/90-hm-backlight.rules
     /usr/bin/udevadm control --reload-rules
     /usr/bin/udevadm trigger --subsystem-match=backlight --action=add
+  '';
+
+  # The lid stays permanently closed (docked WD19TB). systemd-logind's default
+  # HandleLidSwitch=suspend fires in the pre-login boot window — no session
+  # exists yet to inhibit it — so some boots suspend right after the disk
+  # password (journal: "PM: suspend entry (s2idle)" ~2s after boot); screens
+  # stay black until the lid is opened to wake it. Ignore the lid system-wide;
+  # running desktop sessions still handle lid events via their own settings.
+  # HM release-25.11 has no services.logind module, hence the sudo drop-in.
+  logindLidDropIn = pkgs.writeText "00-hm-docked-lid.conf" ''
+    [Login]
+    HandleLidSwitch=ignore
+    HandleLidSwitchExternalPower=ignore
+    HandleLidSwitchDocked=ignore
+  '';
+
+  installLogindLidFiles = pkgs.writeShellScript "hm-install-logind-lid" ''
+    set -euo pipefail
+    install -d /etc/systemd/logind.conf.d
+    install -m644 ${logindLidDropIn} /etc/systemd/logind.conf.d/00-hm-docked-lid.conf
+    # logind only re-reads drop-ins on restart; safe on systemd 255+.
+    /usr/bin/systemctl restart systemd-logind
   '';
 
   kanshiOutput =
@@ -114,7 +138,7 @@ in
         fi
       '';
     })
-    (lib.mkIf genericLinuxBacklightEnabled {
+    (lib.mkIf genericLinuxEnabled {
       installBacklightUdev = lib.hm.dag.entryAfter [ "installPackages" ] ''
         set -eu
         rule=${lib.escapeShellArg backlightUdevRule}
@@ -139,6 +163,24 @@ in
           echo "home-manager: adding ''${USER} to video group for backlight control (sudo)." >&2
           $DRY_RUN_CMD /usr/bin/sudo /usr/sbin/usermod -aG video "''${USER}"
           echo "home-manager: log out and back in if brightness keys still fail after switch." >&2
+        fi
+      '';
+    })
+    (lib.mkIf genericLinuxEnabled {
+      installLogindLid = lib.hm.dag.entryAfter [ "installPackages" ] ''
+        set -eu
+        dropin=${lib.escapeShellArg logindLidDropIn}
+        installer=${lib.escapeShellArg installLogindLidFiles}
+        cmp=${lib.escapeShellArg "${pkgs.diffutils}/bin/cmp"}
+
+        update=
+        if [ ! -f /etc/systemd/logind.conf.d/00-hm-docked-lid.conf ] || ! "$cmp" -s "$dropin" /etc/systemd/logind.conf.d/00-hm-docked-lid.conf; then
+          update=1
+        fi
+
+        if [ -n "$update" ]; then
+          echo "home-manager: logind lid drop-in missing or outdated; installing (sudo)." >&2
+          $DRY_RUN_CMD /usr/bin/sudo "$installer"
         fi
       '';
     })

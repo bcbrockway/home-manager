@@ -16,7 +16,16 @@ with Terragrunt.
 home-manager switch --flake .#bbrockway
 
 # Or use task shortcut
-task update
+task install
+```
+
+### Update repos
+```bash
+# Update repos used by flake using nix
+nix flake update
+
+# Or use task shortcut
+task update-repos
 ```
 
 ### Cleanup
@@ -54,7 +63,8 @@ I'm running Ubuntu 24.04. Nix is installed in a multi-user configuration with ni
   - Defines `bbrockway` (work laptop) and `vagrant` (minimal VM) home configurations
 
 - **work-laptop.nix**: Host entry for the work laptop; imports `home.nix`, sway, and cursor skills modules. Sets
-  `targets.genericLinux`, GDM Sway session install, kanshi display profiles, and GNOME Flameshot keybinding.
+ `targets.genericLinux`, GDM Sway session install, kanshi display profiles, a logind lid drop-in (lid stays closed
+ when docked; prevents boot-time suspend), and GNOME Flameshot keybinding.
 
 - **home.nix**: Shared home-manager configuration defining:
   - User: `bbrockway` (overridable via `_module.args.username`)

@@ -24,7 +24,7 @@
   home.packages = with pkgs; [
     # AWS
     aws-nuke
-    awscli2
+    latest.awscli2
 
     # Languages
     latest.cue
@@ -102,9 +102,18 @@
     };
   };
 
+  programs.fzf = {
+    enable = true;
+    enableZshIntegration = true;
+  };
+
   programs.mise = {
     enable = true;
     enableZshIntegration = true;
+    # Stable nixpkgs (release-25.11) ships mise 2025.11.7, which predates the
+    # aqua backend reading .mise.backend markers - aqua-installed tools
+    # (tflint, terraform-docs, ...) end up with broken PATH entries.
+    package = latest.mise;
   };
 
   programs.password-store = {
