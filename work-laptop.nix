@@ -78,6 +78,22 @@ let
     /usr/bin/systemctl restart systemd-logind
   '';
 
+  # Verbose boot/shutdown console (no `quiet splash`). grub-mkconfig sources
+  # /etc/default/grub.d/*.cfg after /etc/default/grub, so this assignment wins.
+  # Kept because console output is preferred, and it made an intermittent
+  # shutdown freeze visible at power-off (kernel oops in intel_ipu6_isys,
+  # 2026-10). Revert: delete the drop-in and run update-grub.
+  grubConsoleDropIn = pkgs.writeText "00-hm-console.cfg" ''
+    GRUB_CMDLINE_LINUX_DEFAULT="init=/lib/systemd/systemd"
+  '';
+
+  installGrubConsoleFiles = pkgs.writeShellScript "hm-install-grub-console" ''
+    set -euo pipefail
+    install -d /etc/default/grub.d
+    install -m644 ${grubConsoleDropIn} /etc/default/grub.d/00-hm-console.cfg
+    /usr/sbin/update-grub
+  '';
+
   kanshiOutput =
     screen:
     { status, ... } @ args:
@@ -180,6 +196,24 @@ in
 
         if [ -n "$update" ]; then
           echo "home-manager: logind lid drop-in missing or outdated; installing (sudo)." >&2
+          $DRY_RUN_CMD /usr/bin/sudo "$installer"
+        fi
+      '';
+    })
+    (lib.mkIf genericLinuxEnabled {
+      installGrubConsole = lib.hm.dag.entryAfter [ "installPackages" ] ''
+        set -eu
+        dropin=${lib.escapeShellArg grubConsoleDropIn}
+        installer=${lib.escapeShellArg installGrubConsoleFiles}
+        cmp=${lib.escapeShellArg "${pkgs.diffutils}/bin/cmp"}
+
+        update=
+        if [ ! -f /etc/default/grub.d/00-hm-console.cfg ] || ! "$cmp" -s "$dropin" /etc/default/grub.d/00-hm-console.cfg; then
+          update=1
+        fi
+
+        if [ -n "$update" ]; then
+          echo "home-manager: GRUB console drop-in missing or outdated; installing and running update-grub (sudo)." >&2
           $DRY_RUN_CMD /usr/bin/sudo "$installer"
         fi
       '';

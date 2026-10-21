@@ -1,4 +1,4 @@
-{ ... }:
+{ pkgs, ... }:
 {
   programs.waybar = {
     enable = true;
@@ -7,7 +7,7 @@
       * {
         border: none;
         border-radius: 0;
-        font-family: Ubuntu, sans-serif;
+        font-family: Ubuntu, "Font Awesome 7 Free", "Font Awesome 7 Brands", sans-serif;
         font-size: 14px;
         min-height: 0;
       }
@@ -35,7 +35,7 @@
         background: #64727D;
       }
 
-      #mode, #clock, #battery {
+      #mode, #clock, #battery, #custom-ping-latency {
         padding: 0 10px;
       }
 
@@ -43,13 +43,13 @@
         background: #64727D;
       }
 
-      #clock {
+      #clock, #custom-ping-latency {
         background-color: #242424;
       }
 
       #battery {
-        background-color: #ffffff;
-        color: black;
+        background-color: #242424;
+        color: white;
       }
 
       #battery.charging {
@@ -62,21 +62,9 @@
         padding-right: 10px;
       }
 
-      @keyframes blink {
-        to {
-          background-color: #ffffff;
-          color: black;
-        }
-      }
-
-      #battery.warning:not(.charging) {
+      #battery.critical:not(.charging) {
         background: #f53c3c;
         color: white;
-        animation-name: blink;
-        animation-duration: 0.5s;
-        animation-timing-function: steps(12);
-        animation-iteration-count: infinite;
-        animation-direction: alternate;
       }
     '';
     settings.mainBar = {
@@ -89,11 +77,45 @@
         "sway/mode"
       ];
       modules-center = [ "clock" ];
-      modules-right = [ "tray" ];
+      modules-right = [
+        "battery"
+        "custom/ping-latency"
+        "tray"
+      ];
       "sway/workspaces" = {
         disable-scroll = true;
       };
       "clock".format = "{:%d/%m/%Y %H:%M}";
+      "custom/ping-latency" = {
+        # Ubuntu's /usr/bin/ping has cap_net_raw=ep; the nixpkgs iputils ping may not
+        exec = pkgs.writeShellScript "waybar-ping-latency" ''
+          ms=$(/usr/bin/ping -c 1 -W 2 8.8.8.8 2>/dev/null | ${pkgs.gnugrep}/bin/grep -oP 'time=\K[0-9.]+' | head -1)
+          if [ -n "$ms" ]; then
+            printf '\uf1a0 : %.0f ms\n' "$ms"
+          else
+            echo "— ms"
+          fi
+        '';
+        interval = 5;
+        tooltip = false;
+      };
+      battery = {
+        bat = "BAT0";
+        interval = 30;
+        states = {
+          critical = 15;
+        };
+        format = "{capacity}% {icon}";
+        format-charging = "{capacity}% ";
+        format-plugged = "{capacity}% ";
+        format-icons = [
+          ""
+          ""
+          ""
+          ""
+          ""
+        ];
+      };
       "tray" = {
         "icon-size" = 16;
         spacing = 10;

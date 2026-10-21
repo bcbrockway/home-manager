@@ -105,6 +105,7 @@ in
       rofi
       latest.pwvucontrol
       cantarell-fonts
+      font-awesome
       noto-fonts-color-emoji
     ]
     ++ lib.optionals (!swaylockHost) [ swaylock-effects ]
