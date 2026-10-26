@@ -85,6 +85,10 @@ in
   };
 
   fonts.fontconfig.enable = true;
+  # Round (unhinted) but crisp: subpixel RGB AA keeps the ~3x horizontal resolution,
+  # avoiding the fuzz of grayscale-only rendering at small sizes.
+  fonts.fontconfig.hinting = "none";
+  fonts.fontconfig.subpixelRendering = "rgb";
   fonts.fontconfig.defaultFonts = {
     sansSerif = [ "Ubuntu" "Cantarell" "DejaVu Sans" ];
     serif = [ "Ubuntu" "DejaVu Serif" ];
