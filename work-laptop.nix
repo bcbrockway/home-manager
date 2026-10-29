@@ -80,9 +80,15 @@ let
 
   # Verbose boot/shutdown console (no `quiet splash`). grub-mkconfig sources
   # /etc/default/grub.d/*.cfg after /etc/default/grub, so this assignment wins.
-  # Kept because console output is preferred, and it made an intermittent
-  # shutdown freeze visible at power-off (kernel oops in intel_ipu6_isys,
-  # 2026-10). Revert: delete the drop-in and run update-grub.
+  # Also makes a hung power-off diagnosable. Seen 2026-10-28: console ended at
+  # "systemd-shutdown: Powering off." with no "reboot: Power down" after it, i.e.
+  # stuck inside the kernel's device-shutdown / ACPI power-off path. The kernel
+  # stayed alive (it logged a dock hotplug 14h later), the machine just never
+  # powered off. Suspected cause (unconfirmed): the intel_ipu6_isys NULL-deref
+  # oops in runtime-PM suspend earlier in the same boot (present on both known
+  # frozen boots, only ~5 of 26 boots overall). Disks are already unmounted when
+  # it hangs, so holding the power button is safe.
+  # Revert: delete the drop-in and run update-grub.
   grubConsoleDropIn = pkgs.writeText "00-hm-console.cfg" ''
     GRUB_CMDLINE_LINUX_DEFAULT="init=/lib/systemd/systemd"
   '';
@@ -92,6 +98,59 @@ let
     install -d /etc/default/grub.d
     install -m644 ${grubConsoleDropIn} /etc/default/grub.d/00-hm-console.cfg
     /usr/sbin/update-grub
+  '';
+
+  # Ubuntu's kernel.sysrq=176 (10-magic-sysrq.conf) allows sync/remount/reboot but
+  # not process dumps. Add the dump bit (8) so that when the power-off hang recurs
+  # (kernel is still alive, see grubConsoleDropIn) Alt+PrtSc+W prints the stack of
+  # the blocked task to the console; photograph it. If W shows nothing useful,
+  # try Alt+PrtSc+L (all-CPU backtraces). Sorts after 10-magic-sysrq.conf so it wins.
+  sysrqDropIn = pkgs.writeText "99-hm-sysrq.conf" ''
+    kernel.sysrq = 184
+  '';
+
+  installSysrqFiles = pkgs.writeShellScript "hm-install-sysrq" ''
+    set -euo pipefail
+    install -d /etc/sysctl.d
+    install -m644 ${sysrqDropIn} /etc/sysctl.d/99-hm-sysrq.conf
+    /usr/sbin/sysctl -p /etc/sysctl.d/99-hm-sysrq.conf
+  '';
+
+  # Claude Desktop (deb-installed Electron app) keeps its Chromium spellchecker
+  # separate from the in-app language setting and defaults it to en-US from the
+  # OS locale (en_US.UTF-8), so UK spellings get red-underlined. Patch the app's
+  # JSON state in place; it must not be managed with home.file/xdg.configFile
+  # because the app rewrites both files at runtime (HM would flag drift on every
+  # switch). If Claude is running it will overwrite this on exit - restart it.
+  # Verify: jq .spellcheck ~/.config/Claude/Preferences -> {"dictionaries":["en-GB"]}
+  claudeDesktopPrefs = pkgs.writeShellScript "hm-claude-desktop-prefs" ''
+    set -euo pipefail
+    prefs="$HOME/.config/Claude/Preferences"
+    config="$HOME/.config/Claude/config.json"
+    jq=${lib.getExe pkgs.jq}
+    cmp=${lib.getExe' pkgs.diffutils "cmp"}
+
+    patch_json() {
+      local file=$1 filter=$2
+      # Skip if missing (Claude not installed) or unparsable; never break a switch over it.
+      [ -f "$file" ] || return 0
+      local tmp
+      tmp=$(mktemp)
+      if ! "$jq" "$filter" "$file" > "$tmp"; then
+        rm -f "$tmp"
+        echo "home-manager: could not parse $file; skipping Claude Desktop patch" >&2
+        return 0
+      fi
+      if ! "$cmp" -s "$tmp" "$file"; then
+        mv "$tmp" "$file"
+        echo "home-manager: patched $file (restart Claude Desktop to pick it up)" >&2
+      else
+        rm -f "$tmp"
+      fi
+    }
+
+    patch_json "$prefs" '.spellcheck.dictionaries = ["en-GB"] | .spellcheck.dictionary = ""'
+    patch_json "$config" '.locale = "en-GB"'
   '';
 
   kanshiOutput =
@@ -132,6 +191,12 @@ in
   # nm-applet uses /usr/bin/nm-applet for VPN editor plugins.  Install: sudo apt install -y network-manager-openvpn-gnome
 
   home.activation = lib.mkMerge [
+    {
+      claudeDesktopSpellcheck = lib.hm.dag.entryAfter [ "installPackages" ] ''
+        run=${lib.escapeShellArg claudeDesktopPrefs}
+        $DRY_RUN_CMD "$run"
+      '';
+    }
     (lib.mkIf gdmSwayNixEnabled {
       installGdmSwayNixSession = lib.hm.dag.entryAfter [ "installPackages" ] ''
         set -eu
@@ -214,6 +279,24 @@ in
 
         if [ -n "$update" ]; then
           echo "home-manager: GRUB console drop-in missing or outdated; installing and running update-grub (sudo)." >&2
+          $DRY_RUN_CMD /usr/bin/sudo "$installer"
+        fi
+      '';
+    })
+    (lib.mkIf genericLinuxEnabled {
+      installSysrq = lib.hm.dag.entryAfter [ "installPackages" ] ''
+        set -eu
+        dropin=${lib.escapeShellArg sysrqDropIn}
+        installer=${lib.escapeShellArg installSysrqFiles}
+        cmp=${lib.escapeShellArg "${pkgs.diffutils}/bin/cmp"}
+
+        update=
+        if [ ! -f /etc/sysctl.d/99-hm-sysrq.conf ] || ! "$cmp" -s "$dropin" /etc/sysctl.d/99-hm-sysrq.conf; then
+          update=1
+        fi
+
+        if [ -n "$update" ]; then
+          echo "home-manager: SysRq sysctl drop-in missing or outdated; installing (sudo)." >&2
           $DRY_RUN_CMD /usr/bin/sudo "$installer"
         fi
       '';
