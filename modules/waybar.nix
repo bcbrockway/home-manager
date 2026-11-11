@@ -36,7 +36,7 @@
         background: #64727D;
       }
 
-      #mode, #clock, #battery, #custom-ping-latency {
+      #mode, #clock, #battery, #network, #custom-ping-latency {
         padding: 0 10px;
       }
 
@@ -44,7 +44,7 @@
         background: #64727D;
       }
 
-      #clock, #custom-ping-latency {
+      #clock, #network, #custom-ping-latency {
         background-color: #242424;
       }
 
@@ -80,6 +80,7 @@
       modules-center = [ "clock" ];
       modules-right = [
         "battery"
+        "network"
         "custom/ping-latency"
         "tray"
       ];
@@ -87,6 +88,14 @@
         disable-scroll = true;
       };
       "clock".format = "{:%d/%m/%Y %H:%M}";
+      network = {
+        interval = 2;
+        format-ethernet = " {bandwidthDownBytes}  {bandwidthUpBytes}";
+        format-wifi = " {bandwidthDownBytes}  {bandwidthUpBytes}";
+        format-linked = " —  —";
+        format-disconnected = "";
+        tooltip = false;
+      };
       "custom/ping-latency" = {
         # Ubuntu's /usr/bin/ping has cap_net_raw=ep; the nixpkgs iputils ping may not
         exec = pkgs.writeShellScript "waybar-ping-latency" ''

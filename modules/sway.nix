@@ -126,13 +126,6 @@ in
     "password-store" = "gnome";
   };
 
-  # Edge can ignore native notifications unless this policy is set (maps to the Linux pref path
-  # behind prefs::kAllowSystemNotifications). Chrome already defaults the pref to true.
-  xdg.configFile."microsoft-edge/policies/managed/hm-allow-system-notifications.json".text =
-    builtins.toJSON {
-      AllowSystemNotifications = true;
-    };
-
   programs.alacritty = {
     enable = true;
     settings = {
